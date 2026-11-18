@@ -8,3 +8,10 @@ __pycache__/
 *.pyc
 *.db
 .DS_Store
+
+.ruff_cache/
+*.tsbuildinfo
+playwright-report/
+test-results/
+.env.*
+!.env.example
