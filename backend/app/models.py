@@ -62,6 +62,7 @@ class Draft(Base):
     content: Mapped[str] = mapped_column(String(6000))
     status: Mapped[str] = mapped_column(String(30), default="pending")
     generation: Mapped[dict] = mapped_column(JSON, default=dict)
+    revision_number: Mapped[int] = mapped_column(default=1, server_default="1")
 
 
 class Metric(Base):
@@ -116,3 +117,79 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(80))
     resource_id: Mapped[str] = mapped_column(String(36))
     created_at: Mapped[str] = mapped_column(String(40), default=now)
+
+
+class BrandVersion(Base):
+    __tablename__ = "brand_versions"
+    __table_args__ = (UniqueConstraint("project_id", "version"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
+    version: Mapped[int]
+    data: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    approved_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
+
+
+class WorkflowRun(Base):
+    __tablename__ = "workflow_runs"
+    __table_args__ = (UniqueConstraint("organization_id", "idempotency_key"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
+    brand_version_id: Mapped[str] = mapped_column(ForeignKey("brand_versions.id"))
+    requested_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    idempotency_key: Mapped[str] = mapped_column(String(100))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    context: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(20), default="queued", index=True)
+    progress: Mapped[int] = mapped_column(default=0)
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    claim_token: Mapped[str | None] = mapped_column(String(36))
+    lease_until: Mapped[float | None]
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
+
+
+class AgentStep(Base):
+    __tablename__ = "agent_steps"
+    __table_args__ = (UniqueConstraint("run_id", "agent"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    run_id: Mapped[str] = mapped_column(ForeignKey("workflow_runs.id"), index=True)
+    agent: Mapped[str] = mapped_column(String(30))
+    artifact: Mapped[dict] = mapped_column(JSON)
+    generation_mode: Mapped[str] = mapped_column(String(20))
+    usage: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
+
+
+class WorkflowUsage(Base):
+    __tablename__ = "workflow_usage"
+    __table_args__ = (UniqueConstraint("organization_id", "period"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"))
+    period: Mapped[str] = mapped_column(String(7))
+    runs_reserved: Mapped[int] = mapped_column(default=0)
+
+
+class ContentRevision(Base):
+    __tablename__ = "content_revisions"
+    __table_args__ = (UniqueConstraint("draft_id", "version"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    draft_id: Mapped[str] = mapped_column(ForeignKey("drafts.id"), index=True)
+    version: Mapped[int]
+    content: Mapped[str] = mapped_column(String(6000))
+    planned_date: Mapped[str] = mapped_column(String(10))
+    revision_hash: Mapped[str] = mapped_column(String(64))
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
+
+
+class LaunchTask(Base):
+    __tablename__ = "launch_tasks"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    run_id: Mapped[str] = mapped_column(ForeignKey("workflow_runs.id"), index=True)
+    title: Mapped[str] = mapped_column(String(500))
+    phase: Mapped[str] = mapped_column(String(30))
+    due_date: Mapped[str] = mapped_column(String(10))
+    completed: Mapped[bool] = mapped_column(default=False)

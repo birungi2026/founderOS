@@ -64,6 +64,63 @@ def main():
         page.get_by_role("button", name="Sign in", exact=True).click()
         page.get_by_label("Saved project").select_option(label="Browser Growth Test")
         expect(page.get_by_text("25%", exact=True)).to_be_visible()
+        # Connected five-agent workflow shares one approved founder profile.
+        page.get_by_label("Founder name", exact=True).fill("Ada Founder")
+        page.get_by_label("Your founder story", exact=True).fill(
+            "I started this company after helping small teams understand their customer conversion data."
+        )
+        page.get_by_label("Your expertise (one per line)", exact=True).fill(
+            "Customer research\nProduct analytics"
+        )
+        page.get_by_label(
+            "Content pillars (one per line, up to five)", exact=True
+        ).fill("Founder lessons\nPractical growth")
+        page.get_by_label("How should your content sound?", exact=True).fill(
+            "Direct, practical and warm"
+        )
+        page.get_by_label("Your positioning", exact=True).fill(
+            "We help small software teams learn which growth messages lead to useful conversations."
+        )
+        page.get_by_role("button", name="Save brand version", exact=True).click()
+        page.get_by_role("button", name="Approve brand version 1", exact=True).click()
+        page.get_by_role("button", name="Start growth workflow", exact=True).click()
+        expect(page.get_by_text("Ready for your review", exact=True)).to_be_visible(
+            timeout=45000
+        )
+        expect(
+            page.get_by_role("button", name="Save new revision", exact=True)
+        ).to_have_count(7)
+        page.get_by_label("Content draft", exact=True).first.fill(
+            "A founder-edited message about useful customer conversations and the lessons we learned."
+        )
+        page.get_by_role("button", name="Save new revision", exact=True).first.click()
+        expect(page.get_by_text("pending · revision 2", exact=True)).to_be_visible()
+        page.get_by_role("button", name="Research radar", exact=True).click()
+        expect(
+            page.get_by_text(
+                "Explore Founder lessons with Small software teams", exact=True
+            )
+        ).to_be_visible()
+        page.get_by_role("button", name="Video studio", exact=True).click()
+        expect(
+            page.get_by_role("button", name="Copy video script", exact=True)
+        ).to_be_visible()
+        page.get_by_role("button", name="Launch center", exact=True).click()
+        expect(
+            page.get_by_role("heading", name="Product launch checklist", exact=True)
+        ).to_be_visible()
+        task = page.locator(".launch-task input").first
+        task.check()
+        expect(task).to_be_checked()
+        expect(
+            page.get_by_role("button", name="Start growth workflow", exact=True)
+        ).to_be_enabled()
+        page.reload()
+        page.get_by_label("Saved project").select_option(label="Browser Growth Test")
+        expect(page.locator(".memory-status .tag")).to_have_text("Version 1 · approved")
+        expect(page.get_by_text("Ready for your review", exact=True)).to_be_visible()
+        page.get_by_role("button", name="Launch center", exact=True).click()
+        expect(page.locator(".launch-task input").first).to_be_checked()
         page.set_viewport_size({"width": 390, "height": 844})
         assert page.evaluate(
             "document.documentElement.scrollWidth <= window.innerWidth"
@@ -71,10 +128,13 @@ def main():
         page.set_viewport_size({"width": 1440, "height": 1000})
         screenshot = Path(os.getenv("SMOKE_SCREENSHOT", "/tmp/founderos-dashboard.png"))
         page.screenshot(path=str(screenshot), full_page=True)
+        page.locator(".command-center").screenshot(
+            path="/tmp/founderos-command-center.png"
+        )
         assert not errors, errors
         browser.close()
         print(
-            "Browser smoke passed: registration, project, research, plan, draft review, queue, metrics, reload, login, mobile layout"
+            "Browser smoke passed: accounts, legacy workflow, brand approval, five-agent run, seven-day calendar edit, video script, persistent launch checklist, reload, mobile layout"
         )
 
 

@@ -53,6 +53,7 @@ jobs:
           cd backend
           alembic upgrade head
           uvicorn app.main:app --port 8000 --no-access-log > /tmp/founderos-api.log 2>&1 &
+          python -m app.workflows.worker > /tmp/founderos-worker.log 2>&1 &
           cd ../frontend
           npm run start > /tmp/founderos-web.log 2>&1 &
       - name: Wait for services

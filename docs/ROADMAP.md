@@ -1,6 +1,12 @@
 # FounderOS growth-agent roadmap
 
-## Delivered in this implementation
+## Current connected-team milestone
+
+Brand onboarding, immutable approved brand versions, five coordinated agent steps, durable SQL-backed jobs, context and performance snapshots, monthly run limits, a seven-day editable calendar with review invalidation, video scripts/storyboards, and persistent launch checklists. See IMPLEMENTATION.md for exact behavior and remaining work. The original product blueprint documents are retained under blueprints/ as reference material.
+
+This is the first connected workflow, not the complete paid SaaS. Next priorities are safe research/import connectors, real video rendering and storage, self-service social OAuth/scheduling, then Stripe billing and entitlements.
+
+## Previously delivered foundation
 
 1. **Persistence:** SQLAlchemy models, PostgreSQL support, local SQLite, versioned Alembic migrations.
 2. **Identity and organizations:** password hashing, hashed session tokens, expiry/logout, tenant-scoped reads and writes, owner/editor/viewer roles, membership management, transactional audit events.
