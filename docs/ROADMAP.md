@@ -1,6 +1,10 @@
 # FounderOS growth-agent roadmap
 
-## Current connected-team milestone
+## Current research and conversion milestone
+
+Target: first 50 paying customers. Company problem/solution/customer/competitor brief, automatic public-web research, owner research confirmation, daily monitoring independent of daily/weekly/monthly content preparation, 1–5 posts per chosen day, and a customer pipeline. Avatar/voice provider recommendation is documented in AVATAR_PROVIDER.md. Interview recording, cloning, rendered media and social OAuth/metrics are upcoming integrations, not completed features. See GROWTH_EMPLOYEE.md.
+
+## Previous connected-team milestone
 
 Brand onboarding, immutable approved brand versions, five coordinated agent steps, durable SQL-backed jobs, context and performance snapshots, monthly run limits, a seven-day editable calendar with review invalidation, video scripts/storyboards, and persistent launch checklists. See IMPLEMENTATION.md for exact behavior and remaining work. The original product blueprint documents are retained under blueprints/ as reference material.
 

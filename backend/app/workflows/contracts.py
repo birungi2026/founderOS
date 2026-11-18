@@ -29,6 +29,10 @@ class CampaignInput(StrictModel):
     goal: str = Field(min_length=10, max_length=1000)
     week_start: date
     launch_date: date
+    research_mode: Literal["automatic", "manual"] = "automatic"
+    cadence: Literal["weekly", "daily"] = "weekly"
+    posts_per_day: int = Field(default=1, ge=1, le=5)
+    research_only: bool = False
 
 
 class Opportunity(StrictModel):
@@ -38,8 +42,26 @@ class Opportunity(StrictModel):
     uncertainty: Text
 
 
+class ProspectCandidate(StrictModel):
+    name: str = Field(min_length=2, max_length=200)
+    source_id: str
+    qualification: Text
+    unknowns: Text
+
+
+class CompetitorFinding(StrictModel):
+    company: str = Field(min_length=2, max_length=200)
+    source_id: str
+    observation: Text
+    uncertainty: Text
+
+
 class ResearchArtifact(StrictModel):
     opportunities: list[Opportunity] = Field(min_length=1, max_length=5)
+    prospects: list[ProspectCandidate] = Field(default_factory=list, max_length=5)
+    company_understanding: str = Field(default="", max_length=2000)
+    differentiation_hypothesis: str = Field(default="", max_length=2000)
+    competitor_observations: list[CompetitorFinding] = Field(default_factory=list, max_length=5)
 
 
 class CalendarEntry(StrictModel):
@@ -63,6 +85,20 @@ class GrowthArtifact(StrictModel):
         if {entry.day for entry in value} != set(range(1, 8)):
             raise ValueError("Calendar must contain each day from 1 through 7 exactly once")
         return sorted(value, key=lambda entry: entry.day)
+
+
+class DailyGrowthArtifact(StrictModel):
+    objective: Text
+    experiment: Text
+    success_metric: Text
+    calendar: list[CalendarEntry] = Field(min_length=1, max_length=5)
+
+    @field_validator("calendar")
+    @classmethod
+    def today_only(cls, value):
+        if any(entry.day != 1 for entry in value):
+            raise ValueError("Daily run must produce only day one")
+        return value
 
 
 class Scene(StrictModel):

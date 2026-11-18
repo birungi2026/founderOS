@@ -21,6 +21,20 @@ type Brand = {
   created_at: string;
 };
 type Research = {
+  company_understanding?: string;
+  differentiation_hypothesis?: string;
+  competitor_observations?: {
+    company: string;
+    source_id: string;
+    observation: string;
+    uncertainty: string;
+  }[];
+  prospects?: {
+    name: string;
+    source_id: string;
+    qualification: string;
+    unknowns: string;
+  }[];
   opportunities: {
     angle: string;
     audience_fit: string;
@@ -54,9 +68,25 @@ type Run = {
   goal: string;
   generation_mode: string;
   error_code: string | null;
+  research_only?: boolean;
+  research_review_hash?: string;
+  company?: {
+    problem: string;
+    solution: string;
+    target_customers: string;
+    differentiator: string;
+    competitors: string[];
+  };
   brand_version?: number;
   steps?: Step[];
-  sources?: { id: string; title: string; url: string; observed_at: string }[];
+  sources?: {
+    id: string;
+    title: string;
+    url: string;
+    observed_at: string;
+    verification?: string;
+    provider?: string;
+  }[];
   performance_baseline?: { totals: Record<string, number> };
   tasks?: {
     id: string;
@@ -200,12 +230,14 @@ export default function GrowthTeam({
   projectId,
   canWrite,
   sourceCount,
+  isOwner,
   onComplete,
 }: {
   orgId: string;
   projectId: string;
   canWrite: boolean;
   sourceCount: number;
+  isOwner: boolean;
   onComplete: () => Promise<void>;
 }) {
   const [brand, setBrand] = useState<Brand | null>(null),
@@ -215,7 +247,7 @@ export default function GrowthTeam({
     [run, setRun] = useState<Run | null>(null),
     [drafts, setDrafts] = useState<CalendarDraft[]>([]);
   const [goal, setGoal] = useState(
-      "Build a useful weekly content campaign and learn which messages resonate.",
+      "Convert qualified leads and followers into our first 50 paying customers.",
     ),
     [weekStart, setWeekStart] = useState(dateAfter(0)),
     [launchDate, setLaunchDate] = useState(dateAfter(14));
@@ -223,8 +255,11 @@ export default function GrowthTeam({
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const [researchMode, setResearchMode] = useState("automatic"),
+    [cadence, setCadence] = useState("daily"),
+    [researchAvailable, setResearchAvailable] = useState(false);
   const [tab, setTab] = useState("growth"),
-    [usage, setUsage] = useState({ workflow_runs: 0, limit: 20 }),
+    [usage, setUsage] = useState({ workflow_runs: 0, limit: 40 }),
     [generationMode, setGenerationMode] = useState("");
   const completed = useRef(onComplete);
   completed.current = onComplete;
@@ -233,6 +268,8 @@ export default function GrowthTeam({
   async function loadRun(id: string) {
     const r = await api(`/v1/workflows/${id}`, orgId);
     setRun(r);
+    if (["research_review", "research_ready"].includes(r.status))
+      setTab("research");
     setDrafts(
       (await api(`/projects/${projectId}/drafts`, orgId)).drafts.filter(
         (d: CalendarDraft) => d.generation.run_id === id,
@@ -255,11 +292,14 @@ export default function GrowthTeam({
         setRuns(w.runs);
         setUsage(u);
         setGenerationMode(a.generation_mode);
+        setResearchAvailable(a.research_configured);
         if (w.runs[0]) {
           const r = await api(`/v1/workflows/${w.runs[0].id}`, orgId);
           const d = await api(`/projects/${projectId}/drafts`, orgId);
           if (active) {
             setRun(r);
+            if (["research_review", "research_ready"].includes(r.status))
+              setTab("research");
             setDrafts(
               d.drafts.filter(
                 (draft: CalendarDraft) => draft.generation.run_id === r.id,
@@ -293,7 +333,13 @@ export default function GrowthTeam({
           setRuns(
             (await api(`/v1/projects/${projectId}/workflows`, orgId)).runs,
           );
-          if (current.status === "needs_review") {
+          if (
+            ["needs_review", "research_review", "research_ready"].includes(
+              current.status,
+            )
+          ) {
+            if (["research_review", "research_ready"].includes(current.status))
+              setTab("research");
             setDrafts(
               (await api(`/projects/${projectId}/drafts`, orgId)).drafts.filter(
                 (d: CalendarDraft) => d.generation.run_id === current.id,
@@ -316,6 +362,26 @@ export default function GrowthTeam({
       window.clearInterval(timer);
     };
   }, [run?.id, run?.status, projectId, orgId]);
+  useEffect(() => {
+    let active = true,
+      inFlight = false;
+    const timer = window.setInterval(async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const latest = await api(`/v1/projects/${projectId}/workflows`, orgId);
+        if (active) setRuns(latest.runs);
+      } catch {
+        /* Existing selected activity remains usable during a transient polling error. */
+      } finally {
+        inFlight = false;
+      }
+    }, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [projectId, orgId]);
   async function action(fn: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -358,7 +424,13 @@ export default function GrowthTeam({
       const queued = await api(
         `/v1/projects/${projectId}/workflows`,
         orgId,
-        { goal, week_start: weekStart, launch_date: launchDate },
+        {
+          goal,
+          week_start: weekStart,
+          launch_date: launchDate,
+          research_mode: researchMode,
+          cadence,
+        },
         { "Idempotency-Key": crypto.randomUUID() },
       );
       await loadRun(queued.id);
@@ -662,11 +734,37 @@ export default function GrowthTeam({
         <small>
           {generationMode === "llm"
             ? "AI mode: configured model provider. Outputs need your review."
-            : "Template mode: tailored starter outputs; no live model or trend discovery."}
+            : "Template mode: starter copy, with search evidence when automatic research is connected. Configure a model provider for AI-written content."}
         </small>
         {canWrite && (
           <form onSubmit={queue}>
             <fieldset disabled={busy || !!activeRun}>
+              <div className="grid">
+                <label>
+                  Research method
+                  <select
+                    aria-label="Research method"
+                    value={researchMode}
+                    onChange={(e) => setResearchMode(e.target.value)}
+                  >
+                    <option value="automatic">AI researches for me</option>
+                    <option value="manual">
+                      Use optional supplied sources
+                    </option>
+                  </select>
+                </label>
+                <label>
+                  Content cadence
+                  <select
+                    aria-label="Content cadence"
+                    value={cadence}
+                    onChange={(e) => setCadence(e.target.value)}
+                  >
+                    <option value="daily">One daily draft</option>
+                    <option value="weekly">Seven-day campaign</option>
+                  </select>
+                </label>
+              </div>
               <label>
                 What should the team achieve?
                 <textarea
@@ -700,19 +798,43 @@ export default function GrowthTeam({
               <button
                 disabled={
                   brand?.status !== "approved" ||
-                  sourceCount === 0 ||
+                  (researchMode === "automatic"
+                    ? !researchAvailable
+                    : sourceCount === 0) ||
                   usage.workflow_runs >= usage.limit
                 }
               >
                 Start growth workflow
               </button>
               <small>
-                Add a research source in the Research section below before
-                starting.
+                {researchMode === "automatic"
+                  ? researchAvailable
+                    ? "The employee will discover recent evidence using your audience and topics."
+                    : "The workspace search service must be connected once by its administrator."
+                  : "Optional supplied sources are used for this run."}
               </small>
             </fieldset>
           </form>
         )}
+        <button
+          type="button"
+          className="secondary"
+          disabled={busy}
+          onClick={() =>
+            action(async () => {
+              const latest = await api(
+                `/v1/projects/${projectId}/workflows`,
+                orgId,
+              );
+              setRuns(latest.runs);
+              if (latest.runs[0]) await loadRun(latest.runs[0].id);
+              setUsage(await api("/v1/usage", orgId));
+              await completed.current();
+            })
+          }
+        >
+          Refresh team activity
+        </button>
         {runs.length > 0 && (
           <label>
             Campaign history
@@ -776,6 +898,59 @@ export default function GrowthTeam({
               {run.generation_mode}. Sources and performance are frozen for this
               run.
             </small>
+            {run.status === "research_review" && (
+              <section className="notice">
+                <h3>Confirm the research before content creation</h3>
+                <p>
+                  Review the company understanding, source evidence, buyer
+                  opportunities and uncertainties below. Your confirmation
+                  applies to this exact research snapshot.
+                </p>
+                {run.company && (
+                  <dl>
+                    <dt>Problem</dt>
+                    <dd>{run.company.problem}</dd>
+                    <dt>Solution</dt>
+                    <dd>{run.company.solution}</dd>
+                    <dt>Target customers</dt>
+                    <dd>{run.company.target_customers}</dd>
+                    <dt>Differentiation hypothesis</dt>
+                    <dd>
+                      {run.company.differentiator ||
+                        "Needs evidence and founder validation"}
+                    </dd>
+                  </dl>
+                )}
+                {isOwner ? (
+                  <button
+                    disabled={busy}
+                    onClick={() =>
+                      action(async () => {
+                        await api(
+                          `/v1/workflows/${run.id}/confirm-research`,
+                          orgId,
+                          { research_hash: run.research_review_hash },
+                        );
+                        await loadRun(run.id);
+                        setNotice(
+                          "Research confirmed. Content creation will resume from the saved checkpoint.",
+                        );
+                      })
+                    }
+                  >
+                    Confirm research and create content
+                  </button>
+                ) : (
+                  <p>The organization owner must confirm this research.</p>
+                )}
+              </section>
+            )}
+            {run.research_only && (
+              <p>
+                Daily monitoring update. No content is generated by this check;
+                creation follows your chosen routine.
+              </p>
+            )}
             <nav className="team-tabs" aria-label="Agent outputs">
               {[
                 ["growth", "Content calendar"],
@@ -797,6 +972,33 @@ export default function GrowthTeam({
             {tab === "research" &&
               (research ? (
                 <div>
+                  {research.company_understanding && (
+                    <article>
+                      <h3>Company understanding</h3>
+                      <p>{research.company_understanding}</p>
+                      <h3>Differentiation to validate</h3>
+                      <p>{research.differentiation_hypothesis}</p>
+                    </article>
+                  )}
+                  {research.competitor_observations?.map((item, i) => (
+                    <article key={"competitor" + i}>
+                      <h3>{item.company}</h3>
+                      <p>{item.observation}</p>
+                      <small>{item.uncertainty}</small>
+                      {run.sources?.find((s) => s.id === item.source_id) && (
+                        <a
+                          href={
+                            run.sources.find((s) => s.id === item.source_id)!
+                              .url
+                          }
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Competitor evidence
+                        </a>
+                      )}
+                    </article>
+                  ))}
                   {research.opportunities.map((o, i) => (
                     <article key={i}>
                       <h3>{o.angle}</h3>
@@ -819,7 +1021,10 @@ export default function GrowthTeam({
                                 {new Date(
                                   source.observed_at,
                                 ).toLocaleDateString()}{" "}
-                                · operator-attested
+                                ·{" "}
+                                {source.provider === "brave"
+                                  ? "search evidence; verify claims"
+                                  : "supplied evidence"}
                               </small>
                             </p>
                           )
@@ -832,6 +1037,43 @@ export default function GrowthTeam({
                 <p>
                   Research opportunities will appear after that agent finishes.
                 </p>
+              ))}
+            {tab === "research" &&
+              research?.prospects?.map((prospect, index) => (
+                <article key={"prospect" + index}>
+                  <h3>Possible buyer: {prospect.name}</h3>
+                  <p>{prospect.qualification}</p>
+                  <small>Needs qualification: {prospect.unknowns}</small>
+                  {canWrite && (
+                    <button
+                      onClick={() =>
+                        action(async () => {
+                          const source = run.sources?.find(
+                            (s) => s.id === prospect.source_id,
+                          );
+                          if (!source) throw new Error("Source unavailable");
+                          await api(
+                            `/v1/projects/${projectId}/customers`,
+                            orgId,
+                            {
+                              name: prospect.name,
+                              website: source.url,
+                              source_id: source.id,
+                              next_action:
+                                "Verify buyer fit and prepare an individual conversation opener.",
+                            },
+                          );
+                          await completed.current();
+                          setNotice(
+                            "Potential buyer added for qualification; no message was sent.",
+                          );
+                        })
+                      }
+                    >
+                      Add to customer pipeline
+                    </button>
+                  )}
+                </article>
               ))}
             {tab === "growth" &&
               (growth ? (

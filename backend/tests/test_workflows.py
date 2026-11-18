@@ -25,6 +25,7 @@ BRIEF = {
     "goal": "Find useful messages for our first customers",
     "week_start": "2026-11-23",
     "launch_date": "2026-12-05",
+    "research_mode": "manual",
 }
 
 

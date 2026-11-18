@@ -42,7 +42,7 @@ def test_upgrade_preserves_existing_campaign_drafts(tmp_path):
         )
         db.execute(
             "INSERT INTO projects (id,organization_id,data,created_at) VALUES (?,?,?,?)",
-            ("project", "org", "{}", "2026-11-18"),
+            ("project", "org", '{"goal_customers":10}', "2026-11-18"),
         )
         db.execute(
             "INSERT INTO drafts (id,project_id,channel,content,status,generation) VALUES (?,?,?,?,?,?)",
@@ -60,3 +60,7 @@ def test_upgrade_preserves_existing_campaign_drafts(tmp_path):
             "SELECT content,status,revision_number FROM drafts WHERE id='draft'"
         ).fetchone()
         assert row == ("Previously approved content", "approved", 1)
+        import json
+
+        data = json.loads(db.execute("SELECT data FROM projects WHERE id='project'").fetchone()[0])
+        assert data["goal_customers"] == 50

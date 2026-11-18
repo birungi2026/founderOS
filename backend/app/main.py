@@ -48,7 +48,10 @@ from .security import (
     verify_password,
 )
 from .workflows.api import router as workflow_router
+from .workflows.company import router as company_router
 from .workflows.contracts import revision_hash
+from .workflows.customers import router as customers_router
+from .workflows.schedules import router as schedules_router
 
 logger = logging.getLogger("founderos.requests")
 logger.setLevel(logging.INFO)
@@ -58,6 +61,9 @@ logger.propagate = False
 
 app = FastAPI(title="FounderOS API", version="0.3.0")
 app.include_router(workflow_router)
+app.include_router(customers_router)
+app.include_router(company_router)
+app.include_router(schedules_router)
 origins = os.getenv("FRONTEND_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -137,8 +143,9 @@ class Registration(Credentials):
 class ProjectInput(BaseModel):
     product_name: str = Field(min_length=2, max_length=100)
     description: str = Field(min_length=10, max_length=2000)
+    problem: str = Field(default="", max_length=2000)
     audience: str = Field(min_length=3, max_length=500)
-    goal_customers: int = Field(default=10, ge=1, le=10000)
+    goal_customers: int = Field(default=50, ge=1, le=10000)
 
 
 class MetricInput(BaseModel):
@@ -536,7 +543,11 @@ def list_sources(project_id: str, context: Tenant = Depends(tenant), db: Session
                 "url": s.url,
                 "title": s.title,
                 "excerpt": s.excerpt,
-                "verification": "operator_attested",
+                "verification": "operator_attested"
+                if s.provider == "manual"
+                else "search_result_unverified",
+                "provider": s.provider,
+                "observed_at": s.observed_at or s.created_at,
             }
             for s in sources_for(db, project_id)
         ]

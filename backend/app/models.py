@@ -93,6 +93,9 @@ class ResearchSource(Base):
     title: Mapped[str] = mapped_column(String(200))
     excerpt: Mapped[str] = mapped_column(String(4000))
     verified_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    provider: Mapped[str] = mapped_column(String(30), default="manual", server_default="manual")
+    source_key: Mapped[str | None] = mapped_column(String(64), index=True)
+    observed_at: Mapped[str | None] = mapped_column(String(40))
     created_at: Mapped[str] = mapped_column(String(40), default=now)
 
 
@@ -193,3 +196,38 @@ class LaunchTask(Base):
     phase: Mapped[str] = mapped_column(String(30))
     due_date: Mapped[str] = mapped_column(String(10))
     completed: Mapped[bool] = mapped_column(default=False)
+
+
+class DailySchedule(Base):
+    __tablename__ = "daily_schedules"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), unique=True)
+    requested_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    enabled: Mapped[bool] = mapped_column(default=False)
+    goal: Mapped[str] = mapped_column(String(1000))
+    timezone: Mapped[str] = mapped_column(String(100))
+    hour: Mapped[int]
+    frequency: Mapped[str] = mapped_column(String(10), default="daily", server_default="daily")
+    posts_per_day: Mapped[int] = mapped_column(default=1, server_default="1")
+    weekday: Mapped[int] = mapped_column(default=0, server_default="0")
+    month_day: Mapped[int] = mapped_column(default=1, server_default="1")
+    next_run: Mapped[float]
+    next_monitor: Mapped[float] = mapped_column(default=0, server_default="0")
+    last_run_id: Mapped[str | None] = mapped_column(ForeignKey("workflow_runs.id"))
+    last_error: Mapped[str | None] = mapped_column(String(100))
+    revision: Mapped[int] = mapped_column(default=1)
+
+
+class CustomerLead(Base):
+    __tablename__ = "customer_leads"
+    __table_args__ = (UniqueConstraint("project_id", "identity_key"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
+    name: Mapped[str] = mapped_column(String(200))
+    website: Mapped[str] = mapped_column(String(2000))
+    identity_key: Mapped[str] = mapped_column(String(64))
+    source_id: Mapped[str | None] = mapped_column(ForeignKey("research_sources.id"))
+    stage: Mapped[str] = mapped_column(String(20), default="identified")
+    next_action: Mapped[str] = mapped_column(String(1000))
+    version: Mapped[int] = mapped_column(default=1)
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
