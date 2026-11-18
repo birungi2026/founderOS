@@ -35,6 +35,16 @@ def main():
         expect(
             page.get_by_role("heading", name="Browser Growth Test", exact=True)
         ).to_be_visible()
+        expect(
+            page.get_by_role("button", name="Complete company & founder", exact=True)
+        ).to_be_visible()
+        expect(page.get_by_label("HTTPS source URL")).not_to_be_visible()
+        nav = page.get_by_role("navigation", name="Workspace sections", exact=True)
+
+        def section(name):
+            nav.get_by_role("button", name=name, exact=True).click()
+
+        section("2. Social accounts")
         page.get_by_role("button", name="Try demo connection flow", exact=True).click()
         demo = page.get_by_role("region", name="Social connection demo", exact=True)
         demo.get_by_role(
@@ -65,6 +75,7 @@ def main():
                 )
             ).to_be_visible()
         page.get_by_role("button", name="Hide demo connection flow", exact=True).click()
+        section("Advanced tools")
         page.get_by_text("Optional sources and research evidence", exact=True).click()
         page.get_by_label("HTTPS source URL").fill("https://example.com/research")
         page.get_by_label("Source title").fill("Buyer interviews")
@@ -76,7 +87,9 @@ def main():
         expect(page.get_by_role("link", name="Buyer interviews")).to_be_visible()
         page.get_by_role("button", name="Generate growth plan").click()
         expect(page.get_by_text("Generation: template.", exact=False)).to_be_visible()
+        page.get_by_text("Standalone draft generator", exact=True).click()
         page.get_by_role("button", name="Prepare campaign drafts").click()
+        section("3. Research & content")
         expect(page.get_by_role("button", name="Approve draft")).to_have_count(2)
         page.get_by_role("button", name="Approve draft").first.click()
         page.once("dialog", lambda dialog: dialog.accept())
@@ -84,21 +97,27 @@ def main():
         expect(
             page.get_by_text("Queued for a server-side connector.", exact=False)
         ).to_be_visible()
+        section("Advanced tools")
         page.get_by_label("signups", exact=True).fill("4")
         page.get_by_label("paying customers", exact=True).fill("1")
         page.get_by_role("button", name="Record results", exact=True).click()
+        section("Advanced tools")
         expect(page.get_by_text("25%", exact=True)).to_be_visible()
         page.reload()
         page.get_by_label("Saved project").select_option(label="Browser Growth Test")
+        section("Advanced tools")
         expect(page.get_by_text("25%", exact=True)).to_be_visible()
+        section("3. Research & content")
         expect(page.get_by_text("queued", exact=True)).to_be_visible()
         page.get_by_role("button", name="Sign out", exact=True).click()
         page.get_by_label("Email", exact=True).fill(email)
         page.get_by_label("Password", exact=True).fill("browser-fixture-password")
         page.get_by_role("button", name="Sign in", exact=True).click()
         page.get_by_label("Saved project").select_option(label="Browser Growth Test")
+        section("Advanced tools")
         expect(page.get_by_text("25%", exact=True)).to_be_visible()
         # Connected five-agent workflow shares one approved founder profile.
+        section("1. Company & founder")
         page.get_by_label("Founder name", exact=True).fill("Ada Founder")
         page.get_by_label("Your founder story", exact=True).fill(
             "I started this company after helping small teams understand their customer conversion data."
@@ -117,6 +136,7 @@ def main():
         )
         page.get_by_role("button", name="Save brand version", exact=True).click()
         page.get_by_role("button", name="Approve brand version 1", exact=True).click()
+        section("3. Research & content")
         page.get_by_label("Research method", exact=True).select_option("manual")
         page.get_by_label("Content cadence", exact=True).select_option("weekly")
         page.get_by_role("button", name="Start growth workflow", exact=True).click()
@@ -153,11 +173,13 @@ def main():
         ).to_be_enabled()
         page.reload()
         page.get_by_label("Saved project").select_option(label="Browser Growth Test")
+        section("1. Company & founder")
         expect(page.locator(".memory-status .tag")).to_have_text("Version 1 · approved")
+        section("3. Research & content")
         expect(page.get_by_text("Ready for your review", exact=True)).to_be_visible()
         page.get_by_role("button", name="Launch center", exact=True).click()
         expect(page.locator(".launch-task input").first).to_be_checked()
-        page.get_by_text("Customer pipeline and next actions", exact=True).click()
+        section("Customers")
         page.get_by_label("Customer or company name", exact=True).fill("First Customer")
         page.get_by_label("Customer company website", exact=True).fill(
             "https://first-customer.example"
@@ -174,9 +196,7 @@ def main():
             )
         ).to_be_visible()
         # Automatic research + approval checkpoint + configurable routine.
-        page.get_by_text(
-            "Content routine: daily, weekly or monthly", exact=True
-        ).click()
+        section("4. Working routine")
         page.get_by_label("Content frequency", exact=True).select_option("daily")
         page.get_by_label("Posts per selected day", exact=True).fill("3")
         page.get_by_label(
@@ -199,6 +219,7 @@ def main():
             arg={"pid": pid, "org": org},
             timeout=45000,
         )
+        section("3. Research & content")
         page.get_by_role("button", name="Refresh team activity", exact=True).click()
         review_option = (
             page.get_by_label("Campaign history")
@@ -228,6 +249,7 @@ def main():
         expect(
             page.get_by_role("button", name="Save new revision", exact=True)
         ).to_have_count(3)
+        section("4. Working routine")
         page.get_by_label(
             "Enable recurring research and draft generation", exact=True
         ).uncheck()
@@ -241,9 +263,7 @@ def main():
         ).to_be_visible()
         page.reload()
         page.get_by_label("Saved project").select_option(label="Browser Growth Test")
-        page.get_by_text(
-            "Content routine: daily, weekly or monthly", exact=True
-        ).click()
+        section("4. Working routine")
         expect(page.get_by_label("Content frequency", exact=True)).to_have_value(
             "monthly"
         )
@@ -260,9 +280,23 @@ def main():
         page.set_viewport_size({"width": 1440, "height": 1000})
         screenshot = Path(os.getenv("SMOKE_SCREENSHOT", "/tmp/founderos-dashboard.png"))
         page.screenshot(path=str(screenshot), full_page=True)
+        section("3. Research & content")
         page.locator(".command-center").screenshot(
             path="/tmp/founderos-command-center.png"
         )
+        section("Overview")
+        expect(
+            page.get_by_role("heading", name="Your day at a glance", exact=True)
+        ).to_be_visible()
+        expect(
+            page.get_by_label("Customer milestone progress", exact=True)
+        ).to_be_visible()
+        page.screenshot(path="/tmp/founderos-overview.png", full_page=True)
+        page.set_viewport_size({"width": 390, "height": 844})
+        assert page.evaluate(
+            "document.documentElement.scrollWidth <= window.innerWidth"
+        ), "Overview overflows on mobile"
+        page.screenshot(path="/tmp/founderos-overview-mobile.png", full_page=True)
         assert not errors, errors
         browser.close()
         print(

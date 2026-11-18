@@ -5,6 +5,10 @@ import GrowthTeam from "./GrowthTeam";
 import DailyEmployee from "./DailyEmployee";
 import CompanyBrief from "./CompanyBrief";
 import SocialAccounts from "./SocialAccounts";
+import EmployeeOverview, {
+  WorkspaceView,
+  workspaceViews,
+} from "./EmployeeOverview";
 type Org = { id: string; name: string; role: string };
 type Identity = { email: string; organizations: Org[] };
 type Strategy = {
@@ -57,6 +61,10 @@ export default function Home() {
   });
   const [problem, setProblem] = useState("");
   const [pipelineRefresh, setPipelineRefresh] = useState(0);
+  const [view, setView] = useState<WorkspaceView>("overview");
+  useEffect(() => {
+    setView("overview");
+  }, [projectId, orgId]);
   const [memberEmail, setMemberEmail] = useState(""),
     [memberRole, setMemberRole] = useState("viewer");
   const [audit, setAudit] = useState<
@@ -84,7 +92,10 @@ export default function Home() {
     if (orgId)
       api("/projects", orgId)
         .then((r) => {
-          if (active) setProjects(r.projects);
+          if (active) {
+            setProjects(r.projects);
+            setProjectId(r.projects[0]?.id || "");
+          }
         })
         .catch((e) => {
           if (active) setError(e.message);
@@ -228,7 +239,7 @@ export default function Home() {
     URL.revokeObjectURL(url);
   }
   return (
-    <main>
+    <main className={identity && projectId ? "employee-workspace" : ""}>
       <header>
         <span className="tag">FOUNDEROS / GROWTH WORKSPACE</span>
         {identity && (
@@ -237,14 +248,21 @@ export default function Home() {
           </button>
         )}
       </header>
-      <h1>
-        Your AI-powered
-        <br />
-        growth team.
+      <h1 className={identity ? "workspace-headline" : ""}>
+        {identity ? (
+          "Your growth employee."
+        ) : (
+          <>
+            Your AI-powered
+            <br />
+            growth team.
+          </>
+        )}
       </h1>
-      <p className="intro">
-        A shared workspace to plan your growth, review campaigns, and learn what
-        converts.
+      <p className="intro" hidden={!!identity && !!projectId}>
+        {identity
+          ? "Build your company. Give your employee direction, review its work and track paying customers."
+          : "Build your founder brand and work toward your first 50 paying customers."}
       </p>
       {error && (
         <p className="error" role="alert">
@@ -346,9 +364,13 @@ export default function Home() {
               </select>
             </label>
           </section>
-          {canWrite && (
+          {canWrite && (!projectId || view === "settings") && (
             <details className="panel" open={!projectId}>
-              <summary>Create a growth project</summary>
+              <summary>
+                {projectId
+                  ? "Create another company workspace"
+                  : "Start here: tell us about your company"}
+              </summary>
               <form onSubmit={(e) => submit(e, create)}>
                 <label>
                   Product name
@@ -411,290 +433,410 @@ export default function Home() {
           {projectId && (
             <>
               <div className="section-title">
-                <span>ACTIVE PROJECT</span>
+                <span>YOUR COMPANY</span>
                 <h2>
                   {projects.find((p) => p.id === projectId)?.product_name}
                 </h2>
               </div>
-              <SocialAccounts
-                key={"social" + orgId + projectId}
-                orgId={orgId}
-                projectId={projectId}
-                isOwner={role === "owner"}
-              />
-              <DailyEmployee
-                key={"daily" + orgId + projectId}
-                orgId={orgId}
-                projectId={projectId}
-                canWrite={canWrite}
-                isOwner={role === "owner"}
-                refreshKey={pipelineRefresh}
-              />
-              <CompanyBrief
-                key={"company" + orgId + projectId}
-                orgId={orgId}
-                projectId={projectId}
-                canWrite={canWrite}
-              />
-              <GrowthTeam
-                key={orgId + projectId}
-                orgId={orgId}
-                projectId={projectId}
-                canWrite={canWrite}
-                sourceCount={sources.length}
-                isOwner={role === "owner"}
-                onComplete={async () => {
-                  setDrafts(
-                    (await api(`/projects/${projectId}/drafts`, orgId)).drafts,
-                  );
-                  setSources(
-                    (await api(`/projects/${projectId}/sources`, orgId))
-                      .sources,
-                  );
-                  setPipelineRefresh((value) => value + 1);
-                }}
-              />
-              <details className="panel">
-                <summary>Optional sources and research evidence</summary>
-                <p>
-                  The growth employee collects search evidence automatically
-                  when the search service is connected. You can optionally add
-                  your own research here. Search excerpts and supplied notes are
-                  evidence to assess, not independently verified facts.
-                </p>
-                {sources.map((s) => (
-                  <article key={s.id}>
-                    <a href={s.url} target="_blank" rel="noreferrer">
-                      {s.title}
-                    </a>
-                    <p>{s.excerpt}</p>
-                  </article>
-                ))}
-                {canWrite && (
-                  <form onSubmit={(e) => submit(e, addSource)}>
-                    <label>
-                      HTTPS source URL
-                      <input
-                        type="url"
-                        required
-                        value={sourceUrl}
-                        onChange={(e) => setSourceUrl(e.target.value)}
-                      />
-                    </label>
-                    <label>
-                      Source title
-                      <input
-                        minLength={2}
-                        maxLength={200}
-                        required
-                        value={sourceTitle}
-                        onChange={(e) => setSourceTitle(e.target.value)}
-                      />
-                    </label>
-                    <label>
-                      Relevant excerpt
-                      <textarea
-                        minLength={10}
-                        maxLength={4000}
-                        required
-                        value={excerpt}
-                        onChange={(e) => setExcerpt(e.target.value)}
-                      />
-                    </label>
-                    <label className="check">
-                      <input
-                        type="checkbox"
-                        required
-                        checked={permission}
-                        onChange={(e) => setPermission(e.target.checked)}
-                      />
-                      I reviewed this source and have permission to use the
-                      excerpt.
-                    </label>
-                    <button>Add research source</button>
-                  </form>
-                )}
-              </details>
-              <section className="panel">
-                <span className="eyebrow">OPTIONAL / QUICK PLAN</span>
-                <h2>Quick growth plan.</h2>
-                <p>
-                  This standalone tool uses product details. Use the coordinated
-                  team above for a brand-aware weekly campaign.
-                </p>
-                {canWrite && (
-                  <button onClick={() => run(plan)}>
-                    Generate growth plan
+              <nav className="workspace-nav" aria-label="Workspace sections">
+                {workspaceViews.map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-current={view === id ? "page" : undefined}
+                    onClick={() => setView(id)}
+                  >
+                    {label}
                   </button>
-                )}
-                {strategy && (
-                  <>
-                    <small>
-                      Generation: {strategy.generation_mode}. Recommendations
-                      require your judgment.
-                    </small>
-                    <ol>
-                      {strategy.steps.map((s, i) => (
-                        <li key={i}>{s}</li>
-                      ))}
-                    </ol>
-                    {strategy.citations.map((s) => (
-                      <a
-                        className="citation"
-                        key={s.id}
-                        href={s.url}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
+                ))}
+              </nav>
+              <section className="view-description" aria-live="polite">
+                <h2>
+                  {view === "overview"
+                    ? "Your day at a glance"
+                    : workspaceViews
+                        .find(([id]) => id === view)?.[1]
+                        .replace(/^\d\. /, "")}
+                </h2>
+                <p>
+                  {
+                    {
+                      overview:
+                        "One next step, current activity and progress toward your goal.",
+                      profile:
+                        "Confirm your business context and teach your employee your story and voice.",
+                      accounts:
+                        "Grant account access, or try the sample connection flow without API keys.",
+                      content:
+                        "Start an assignment, confirm the research and review the resulting drafts.",
+                      customers:
+                        "Track real buyer conversations and confirmed purchases.",
+                      routine:
+                        "Choose how often your employee prepares content. This does not enable automatic publishing.",
+                      settings:
+                        "Optional manual sources, standalone tools, metric entry and team administration.",
+                    }[view]
+                  }
+                </p>
+              </section>
+              {view === "overview" && (
+                <div>
+                  <EmployeeOverview
+                    key={orgId + projectId + view}
+                    orgId={orgId}
+                    projectId={projectId}
+                    navigate={setView}
+                    refreshKey={pipelineRefresh}
+                  />
+                </div>
+              )}
+              {view === "profile" && (
+                <div className="journey-actions">
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => setView("accounts")}
+                  >
+                    Next: connect social accounts →
+                  </button>
+                  <p>
+                    Save and approve your founder profile below before starting
+                    an assignment.
+                  </p>
+                </div>
+              )}
+              {view === "accounts" && (
+                <div className="journey-actions">
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => setView("content")}
+                  >
+                    Next: research & content →
+                  </button>
+                  <p>
+                    You can skip connecting accounts while you explore the demo.
+                  </p>
+                </div>
+              )}
+              <div hidden={view !== "accounts"}>
+                <SocialAccounts
+                  key={"social" + orgId + projectId}
+                  orgId={orgId}
+                  projectId={projectId}
+                  isOwner={role === "owner"}
+                />
+              </div>
+              <div
+                hidden={view !== "customers" && view !== "routine"}
+                data-employee-view={view}
+              >
+                <DailyEmployee
+                  key={"daily" + orgId + projectId}
+                  orgId={orgId}
+                  projectId={projectId}
+                  canWrite={canWrite}
+                  isOwner={role === "owner"}
+                  refreshKey={pipelineRefresh}
+                  section={view}
+                />
+              </div>
+              <div hidden={view !== "profile"}>
+                <CompanyBrief
+                  key={"company" + orgId + projectId}
+                  orgId={orgId}
+                  projectId={projectId}
+                  canWrite={canWrite}
+                />
+              </div>
+              <div
+                hidden={view !== "profile" && view !== "content"}
+                data-team-view={view}
+              >
+                <GrowthTeam
+                  key={orgId + projectId}
+                  orgId={orgId}
+                  projectId={projectId}
+                  canWrite={canWrite}
+                  sourceCount={sources.length}
+                  isOwner={role === "owner"}
+                  onComplete={async () => {
+                    setDrafts(
+                      (await api(`/projects/${projectId}/drafts`, orgId))
+                        .drafts,
+                    );
+                    setSources(
+                      (await api(`/projects/${projectId}/sources`, orgId))
+                        .sources,
+                    );
+                    setPipelineRefresh((value) => value + 1);
+                  }}
+                />
+              </div>
+              <div hidden={view !== "settings"}>
+                <details className="panel">
+                  <summary>Optional sources and research evidence</summary>
+                  <p>
+                    The growth employee collects search evidence automatically
+                    when the search service is connected. You can optionally add
+                    your own research here. Search excerpts and supplied notes
+                    are evidence to assess, not independently verified facts.
+                  </p>
+                  {sources.map((s) => (
+                    <article key={s.id}>
+                      <a href={s.url} target="_blank" rel="noreferrer">
                         {s.title}
                       </a>
-                    ))}
-                  </>
-                )}
-              </section>
-              <section className="panel">
-                <span className="eyebrow">CAMPAIGN APPROVAL INBOX</span>
-                <h2>Review your campaign content.</h2>
-                {canWrite && (
-                  <button onClick={() => run(generate)}>
-                    Prepare campaign drafts
-                  </button>
-                )}
-                <p>
-                  Review approves a draft. Owners can then explicitly queue it.
-                  No messages are automatically sent.
-                </p>
-                {drafts.map((d) => (
-                  <article key={d.id}>
-                    <div className="draft-heading">
-                      <strong>{d.channel.toUpperCase()}</strong>
-                      <span className="tag">{d.status}</span>
-                    </div>
-                    <p className="copy">{d.content}</p>
-                    <small>Generation: {d.generation.mode}</small>
-                    {canWrite && d.status === "pending" && (
-                      <div>
-                        <button
-                          onClick={() => run(() => review(d.id, "approved"))}
+                      <p>{s.excerpt}</p>
+                    </article>
+                  ))}
+                  {canWrite && (
+                    <form onSubmit={(e) => submit(e, addSource)}>
+                      <label>
+                        HTTPS source URL
+                        <input
+                          type="url"
+                          required
+                          value={sourceUrl}
+                          onChange={(e) => setSourceUrl(e.target.value)}
+                        />
+                      </label>
+                      <label>
+                        Source title
+                        <input
+                          minLength={2}
+                          maxLength={200}
+                          required
+                          value={sourceTitle}
+                          onChange={(e) => setSourceTitle(e.target.value)}
+                        />
+                      </label>
+                      <label>
+                        Relevant excerpt
+                        <textarea
+                          minLength={10}
+                          maxLength={4000}
+                          required
+                          value={excerpt}
+                          onChange={(e) => setExcerpt(e.target.value)}
+                        />
+                      </label>
+                      <label className="check">
+                        <input
+                          type="checkbox"
+                          required
+                          checked={permission}
+                          onChange={(e) => setPermission(e.target.checked)}
+                        />
+                        I reviewed this source and have permission to use the
+                        excerpt.
+                      </label>
+                      <button>Add research source</button>
+                    </form>
+                  )}
+                </details>
+                <section className="panel">
+                  <span className="eyebrow">OPTIONAL / QUICK PLAN</span>
+                  <h2>Quick growth plan.</h2>
+                  <p>
+                    This standalone tool uses product details. Use the
+                    coordinated team above for a brand-aware weekly campaign.
+                  </p>
+                  {canWrite && (
+                    <button onClick={() => run(plan)}>
+                      Generate growth plan
+                    </button>
+                  )}
+                  {strategy && (
+                    <>
+                      <small>
+                        Generation: {strategy.generation_mode}. Recommendations
+                        require your judgment.
+                      </small>
+                      <ol>
+                        {strategy.steps.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ol>
+                      {strategy.citations.map((s) => (
+                        <a
+                          className="citation"
+                          key={s.id}
+                          href={s.url}
+                          target="_blank"
+                          rel="noreferrer"
                         >
-                          Approve draft
-                        </button>
-                        <button
-                          className="secondary"
-                          onClick={() => run(() => review(d.id, "rejected"))}
-                        >
-                          Reject
-                        </button>
+                          {s.title}
+                        </a>
+                      ))}
+                    </>
+                  )}
+                </section>
+              </div>
+              <div hidden={view !== "content"}>
+                <section className="panel">
+                  <span className="eyebrow">CAMPAIGN APPROVAL INBOX</span>
+                  <h2>Review your campaign content.</h2>
+                  {!drafts.length && (
+                    <p>
+                      No drafts yet. Start a growth workflow above to prepare
+                      content using your approved founder profile.
+                    </p>
+                  )}
+                  <p>
+                    Review approves a draft. Owners can then explicitly queue
+                    it. No messages are automatically sent.
+                  </p>
+                  {drafts.map((d) => (
+                    <article key={d.id}>
+                      <div className="draft-heading">
+                        <strong>{d.channel.toUpperCase()}</strong>
+                        <span className="tag">{d.status}</span>
                       </div>
-                    )}
-                    {role === "owner" && d.status === "approved" && (
-                      <button onClick={() => run(() => publish(d.id))}>
-                        Queue approved draft
-                      </button>
-                    )}
-                  </article>
-                ))}
-              </section>
-              <section className="panel">
-                <span className="eyebrow">04 / ANALYST</span>
-                <h2>Track outcomes, not guesses.</h2>
-                <p>
-                  Record incremental results once. API events are added to these
-                  totals.
-                </p>
-                {canWrite && (
-                  <form onSubmit={(e) => submit(e, record)}>
-                    <label>
-                      Channel
-                      <input
-                        minLength={2}
-                        maxLength={100}
-                        required
-                        value={channel}
-                        onChange={(e) => setChannel(e.target.value)}
-                      />
-                    </label>
-                    <div className="grid">
-                      {Object.entries(counts).map(([key, value]) => (
-                        <label key={key}>
-                          {key.replaceAll("_", " ")}
-                          <input
-                            type="number"
-                            min={0}
-                            required
-                            value={value}
-                            onChange={(e) =>
-                              setCounts((old) => ({
-                                ...old,
-                                [key]: Number(e.target.value),
-                              }))
-                            }
-                          />
-                        </label>
-                      ))}
-                    </div>
-                    <button>Record results</button>
-                  </form>
-                )}
-                <button
-                  className="secondary"
-                  onClick={() =>
-                    run(async () =>
-                      setAnalytics(
-                        await api(`/projects/${projectId}/analytics`, orgId),
-                      ),
-                    )
-                  }
-                >
-                  Refresh analytics
-                </button>
-                <button className="secondary" onClick={() => run(download)}>
-                  Export CSV
-                </button>
-                {analytics && (
-                  <>
-                    <div className="stats">
-                      {Object.entries(analytics.totals).map(([key, value]) => (
-                        <div key={key}>
-                          <strong>
-                            {value}
-                            {key.endsWith("rate") ? "%" : ""}
-                          </strong>
-                          <span>{key.replaceAll("_", " ")}</span>
+                      <p className="copy">{d.content}</p>
+                      <small>Generation: {d.generation.mode}</small>
+                      {canWrite && d.status === "pending" && (
+                        <div>
+                          <button
+                            onClick={() => run(() => review(d.id, "approved"))}
+                          >
+                            Approve draft
+                          </button>
+                          <button
+                            className="secondary"
+                            onClick={() => run(() => review(d.id, "rejected"))}
+                          >
+                            Reject
+                          </button>
                         </div>
-                      ))}
-                    </div>
-                    <div className="table-wrap">
-                      <table>
-                        <caption>Results by channel</caption>
-                        <thead>
-                          <tr>
-                            <th>Channel</th>
-                            <th>Impressions</th>
-                            <th>Leads</th>
-                            <th>Signups</th>
-                            <th>Customers</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.entries(analytics.channels).map(([c, n]) => (
-                            <tr key={c}>
-                              <td>{c}</td>
-                              <td>{n.impressions}</td>
-                              <td>{n.leads}</td>
-                              <td>{n.signups}</td>
-                              <td>{n.paying_customers}</td>
+                      )}
+                      {role === "owner" && d.status === "approved" && (
+                        <button onClick={() => run(() => publish(d.id))}>
+                          Queue approved draft
+                        </button>
+                      )}
+                    </article>
+                  ))}
+                </section>
+              </div>
+              <div hidden={view !== "settings"}>
+                <details className="panel">
+                  <summary>Standalone draft generator</summary>
+                  <p>
+                    This optional tool uses the quick plan instead of the
+                    coordinated employee workflow.
+                  </p>
+                  {canWrite && (
+                    <button onClick={() => run(generate)}>
+                      Prepare campaign drafts
+                    </button>
+                  )}
+                </details>
+                <section className="panel">
+                  <span className="eyebrow">MANUAL RESULTS</span>
+                  <h2>Track outcomes, not guesses.</h2>
+                  <p>
+                    Record incremental results once. API events are added to
+                    these totals.
+                  </p>
+                  {canWrite && (
+                    <form onSubmit={(e) => submit(e, record)}>
+                      <label>
+                        Channel
+                        <input
+                          minLength={2}
+                          maxLength={100}
+                          required
+                          value={channel}
+                          onChange={(e) => setChannel(e.target.value)}
+                        />
+                      </label>
+                      <div className="grid">
+                        {Object.entries(counts).map(([key, value]) => (
+                          <label key={key}>
+                            {key.replaceAll("_", " ")}
+                            <input
+                              type="number"
+                              min={0}
+                              required
+                              value={value}
+                              onChange={(e) =>
+                                setCounts((old) => ({
+                                  ...old,
+                                  [key]: Number(e.target.value),
+                                }))
+                              }
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      <button>Record results</button>
+                    </form>
+                  )}
+                  <button
+                    className="secondary"
+                    onClick={() =>
+                      run(async () =>
+                        setAnalytics(
+                          await api(`/projects/${projectId}/analytics`, orgId),
+                        ),
+                      )
+                    }
+                  >
+                    Refresh analytics
+                  </button>
+                  <button className="secondary" onClick={() => run(download)}>
+                    Export CSV
+                  </button>
+                  {analytics && (
+                    <>
+                      <div className="stats">
+                        {Object.entries(analytics.totals).map(
+                          ([key, value]) => (
+                            <div key={key}>
+                              <strong>
+                                {value}
+                                {key.endsWith("rate") ? "%" : ""}
+                              </strong>
+                              <span>{key.replaceAll("_", " ")}</span>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                      <div className="table-wrap">
+                        <table>
+                          <caption>Results by channel</caption>
+                          <thead>
+                            <tr>
+                              <th>Channel</th>
+                              <th>Impressions</th>
+                              <th>Leads</th>
+                              <th>Signups</th>
+                              <th>Customers</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                )}
-              </section>
+                          </thead>
+                          <tbody>
+                            {Object.entries(analytics.channels).map(
+                              ([c, n]) => (
+                                <tr key={c}>
+                                  <td>{c}</td>
+                                  <td>{n.impressions}</td>
+                                  <td>{n.leads}</td>
+                                  <td>{n.signups}</td>
+                                  <td>{n.paying_customers}</td>
+                                </tr>
+                              ),
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </section>
+              </div>
             </>
           )}
-          {role === "owner" && (
+          {role === "owner" && (!projectId || view === "settings") && (
             <details className="panel">
               <summary>Organization access and audit</summary>
               <p>Add an existing registered user to this organization.</p>
