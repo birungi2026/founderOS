@@ -4,6 +4,7 @@ import { API, api } from "./api";
 import GrowthTeam from "./GrowthTeam";
 import DailyEmployee from "./DailyEmployee";
 import CompanyBrief from "./CompanyBrief";
+import SocialAccounts from "./SocialAccounts";
 type Org = { id: string; name: string; role: string };
 type Identity = { email: string; organizations: Org[] };
 type Strategy = {
@@ -415,6 +416,12 @@ export default function Home() {
                   {projects.find((p) => p.id === projectId)?.product_name}
                 </h2>
               </div>
+              <SocialAccounts
+                key={"social" + orgId + projectId}
+                orgId={orgId}
+                projectId={projectId}
+                isOwner={role === "owner"}
+              />
               <DailyEmployee
                 key={"daily" + orgId + projectId}
                 orgId={orgId}
