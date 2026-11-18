@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import SocialDemo from "./SocialDemo";
 type Account = {
   id: string;
   provider: string;
@@ -59,6 +60,7 @@ export default function SocialAccounts({
         Access currently reads your profile and recent posts to inform growth
         workflows. Publishing and messaging are separate integrations.
       </p>
+      <SocialDemo />
       {message && <p role="status">{message}</p>}
       {providers.map((p) => (
         <div key={p.provider}>

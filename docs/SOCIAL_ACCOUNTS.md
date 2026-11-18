@@ -23,3 +23,7 @@ OAuth state is random, hashed, short-lived, bound to the founder session/user/pr
 Automated tests mock Meta endpoints. They verify grant/callback handling, replay/session isolation, encrypted storage, sanitized snapshots, tenant isolation and disconnect. Live provider authorization cannot be verified without the deployment's Meta app configuration and a real eligible account.
 
 Official references: [Instagram business login](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-instagram-login/business-login), [Instagram API capabilities](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-instagram-login), [Facebook Page enumeration](https://developers.facebook.com/docs/graph-api/reference/user/accounts/).
+
+## Preview without credentials
+
+Open a project → Connected social accounts → **Try demo connection flow**. Preview Instagram or Facebook Pages, approve or cancel simulated read-only access, retrieve sample followers/posts and disconnect. No API credentials or encryption key are needed for this preview. All demo state stays in the current UI session, resets on reload/project switch, and never enters real account records, agent context or analytics. The real connection buttons still require valid Meta configuration; placeholder strings are not live credentials.

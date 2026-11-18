@@ -35,6 +35,36 @@ def main():
         expect(
             page.get_by_role("heading", name="Browser Growth Test", exact=True)
         ).to_be_visible()
+        page.get_by_role("button", name="Try demo connection flow", exact=True).click()
+        demo = page.get_by_role("region", name="Social connection demo", exact=True)
+        demo.get_by_role(
+            "button", name="Preview Instagram connection", exact=True
+        ).click()
+        page.get_by_role("button", name="Cancel demo connection", exact=True).click()
+        expect(
+            demo.get_by_text(
+                "Demo connection cancelled. No access granted.", exact=True
+            )
+        ).to_be_visible()
+        for provider in ["Instagram", "Facebook Pages"]:
+            demo.get_by_role(
+                "button", name=f"Preview {provider} connection", exact=True
+            ).click()
+            page.get_by_role("button", name="Approve demo access", exact=True).click()
+            demo.get_by_role(
+                "button", name=f"Retrieve {provider} sample data", exact=True
+            ).click()
+            expect(demo.get_by_text("Sample followers:", exact=True)).to_be_visible()
+            demo.get_by_role(
+                "button", name=f"Disconnect {provider} demo", exact=True
+            ).click()
+            expect(
+                demo.get_by_text(
+                    "Demo account disconnected. Its sample data was removed.",
+                    exact=True,
+                )
+            ).to_be_visible()
+        page.get_by_role("button", name="Hide demo connection flow", exact=True).click()
         page.get_by_text("Optional sources and research evidence", exact=True).click()
         page.get_by_label("HTTPS source URL").fill("https://example.com/research")
         page.get_by_label("Source title").fill("Buyer interviews")
@@ -153,7 +183,12 @@ def main():
             "Enable recurring research and draft generation", exact=True
         ).check()
         page.get_by_role("button", name="Save content routine", exact=True).click()
-        expect(page.get_by_text("Content routine enabled. Drafts will be prepared on your selected days.", exact=True)).to_be_visible()
+        expect(
+            page.get_by_text(
+                "Content routine enabled. Drafts will be prepared on your selected days.",
+                exact=True,
+            )
+        ).to_be_visible()
         pid = page.get_by_label("Saved project").input_value()
         org = page.get_by_label("Organization", exact=True).input_value()
         page.wait_for_function(
