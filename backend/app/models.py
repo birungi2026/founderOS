@@ -231,3 +231,28 @@ class CustomerLead(Base):
     next_action: Mapped[str] = mapped_column(String(1000))
     version: Mapped[int] = mapped_column(default=1)
     created_at: Mapped[str] = mapped_column(String(40), default=now)
+
+
+class SocialAuthorization(Base):
+    __tablename__ = "social_authorizations"
+    state_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    session_hash: Mapped[str] = mapped_column(String(64))
+    provider: Mapped[str] = mapped_column(String(20))
+    expires_at: Mapped[float]
+
+
+class SocialAccount(Base):
+    __tablename__ = "social_accounts"
+    __table_args__ = (UniqueConstraint("project_id", "provider", "external_id"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
+    provider: Mapped[str] = mapped_column(String(20))
+    external_id: Mapped[str] = mapped_column(String(100))
+    name: Mapped[str] = mapped_column(String(200))
+    encrypted_token: Mapped[str] = mapped_column(String(6000))
+    permissions: Mapped[list] = mapped_column(JSON)
+    expires_at: Mapped[float]
+    status: Mapped[str] = mapped_column(String(30), default="connected")
+    snapshot: Mapped[dict] = mapped_column(JSON, default=dict)
