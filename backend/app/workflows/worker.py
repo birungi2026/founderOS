@@ -18,6 +18,7 @@ from ..models import (
     Membership,
     WorkflowRun,
 )
+from . import research
 from .agents import AGENTS, run_agent
 from .contracts import revision_hash
 
@@ -84,16 +85,21 @@ def process_one(factory=SessionLocal):
         changed = db.execute(
             update(WorkflowRun)
             .where(WorkflowRun.id == run_id, WorkflowRun.status == "queued")
-            .values(status="running", claim_token=token, lease_until=time.time() + 300)
+            .values(status="running", claim_token=token, lease_until=time.time() + 600)
         )
         if changed.rowcount != 1:
             db.rollback()
             return True
         ctx = run.context
+        artifacts = {
+            step.agent: step.artifact
+            for step in db.scalars(select(AgentStep).where(AgentStep.run_id == run_id))
+        }
         db.commit()
-    artifacts = {}
     try:
         for index, (agent, _) in enumerate(AGENTS, 1):
+            if agent in artifacts:
+                continue
             with factory() as db:
                 run = owned(db, run_id, token)
                 if not run:
@@ -101,6 +107,41 @@ def process_one(factory=SessionLocal):
                 if not authorized(db, run):
                     fail(factory, run_id, token, "access_revoked")
                     return True
+            if agent == "research" and ctx.get("research_mode") == "automatic":
+                try:
+                    discovered = research.discover(ctx)
+                except Exception:
+                    fail(factory, run_id, token, "research_failed")
+                    return True
+                with factory() as db:
+                    run = owned(db, run_id, token)
+                    if not run:
+                        return True
+                    if not authorized(db, run):
+                        fail(factory, run_id, token, "access_revoked")
+                        return True
+                    # Updating the claimed row serializes cancellation with evidence writes.
+                    claimed = db.execute(
+                        update(WorkflowRun)
+                        .where(
+                            WorkflowRun.id == run_id,
+                            WorkflowRun.status == "running",
+                            WorkflowRun.claim_token == token,
+                            WorkflowRun.lease_until > time.time(),
+                        )
+                        .values(progress=20)
+                    )
+                    if claimed.rowcount != 1:
+                        db.rollback()
+                        return True
+                    ctx = {
+                        **ctx,
+                        "sources": research.save_discovered(
+                            db, run.project_id, run.requested_by, discovered
+                        ),
+                    }
+                    run.context = ctx
+                    db.commit()
             artifact, usage, mode = run_agent(agent, ctx, artifacts)
             with factory() as db:
                 # CAS coordinates cancellation and lease expiry with every persisted step.
@@ -126,6 +167,18 @@ def process_one(factory=SessionLocal):
                         generation_mode=mode,
                     )
                 )
+                if agent == "research" and (
+                    ctx.get(
+                        "requires_research_confirmation", ctx.get("research_mode") == "automatic"
+                    )
+                    or ctx.get("research_only")
+                ):
+                    run = db.get(WorkflowRun, run_id)
+                    run.status = "research_ready" if ctx.get("research_only") else "research_review"
+                    if ctx.get("research_only"):
+                        run.progress = 100
+                    db.commit()
+                    return True
                 db.commit()
             artifacts[agent] = artifact
         with factory() as db:
@@ -214,7 +267,10 @@ def main():
     if args.once:
         process_one()
         return
+    from .schedules import schedule_one
+
     while True:
+        schedule_one()
         if not process_one():
             time.sleep(2)
 

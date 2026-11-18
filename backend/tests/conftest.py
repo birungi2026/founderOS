@@ -70,8 +70,9 @@ def project(client):
         json={
             "product_name": "Qopanza",
             "description": "Developer security and cryptographic discovery",
+            "problem": "Small teams struggle to understand security review requirements.",
             "audience": "Software startups",
-            "goal_customers": 10,
+            "goal_customers": 50,
         },
     )
     assert r.status_code == 201, r.text

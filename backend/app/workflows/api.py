@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException
+from pydantic import Field
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -21,9 +22,18 @@ from ..models import (
     WorkflowRun,
     WorkflowUsage,
 )
-from ..security import Tenant, audit, editor, tenant
+from ..security import Tenant, audit, editor, owner, tenant
+from . import research
 from .agents import AGENTS
-from .contracts import BrandInput, CampaignInput, RevisionInput, TaskDecision, digest, revision_hash
+from .contracts import (
+    BrandInput,
+    CampaignInput,
+    RevisionInput,
+    StrictModel,
+    TaskDecision,
+    digest,
+    revision_hash,
+)
 
 router = APIRouter(prefix="/v1", tags=["Founder growth team"])
 
@@ -93,6 +103,8 @@ def run_dict(run):
         "week_start": run.context["week_start"],
         "launch_date": run.context["launch_date"],
         "generation_mode": run.context["generation_mode"],
+        "research_mode": run.context.get("research_mode", "manual"),
+        "cadence": run.context.get("cadence", "weekly"),
         "created_at": run.created_at,
     }
 
@@ -103,6 +115,7 @@ def agents(context: Tenant = Depends(tenant)):
         "agents": [{"id": agent, "name": name} for agent, name in AGENTS],
         "generation_mode": os.getenv("GENERATION_MODE", "template"),
         "video_capability": "script_and_storyboard",
+        "research_configured": research.configured(),
     }
 
 
@@ -220,7 +233,7 @@ def reserve_quota(db, organization_id):
                     WorkflowUsage.organization_id == organization_id, WorkflowUsage.period == period
                 )
             )
-    limit = int(os.getenv("WORKFLOW_MONTHLY_RUN_LIMIT", "20"))
+    limit = int(os.getenv("WORKFLOW_MONTHLY_RUN_LIMIT", "40"))
     changed = db.execute(
         update(WorkflowUsage)
         .where(WorkflowUsage.id == row.id, WorkflowUsage.runs_reserved < limit)
@@ -259,18 +272,35 @@ def queue_workflow(
         .order_by(ResearchSource.created_at.desc())
         .limit(5)
     ).all()
-    if not sources:
+    if data.research_mode == "manual" and not sources:
         raise HTTPException(
             409, "Add at least one permitted research source before starting the team"
+        )
+    if data.research_mode == "automatic" and not research.configured():
+        raise HTTPException(
+            503,
+            "Automatic research needs a server-side search provider key. Your founder does not need to supply sources.",
+        )
+    from .company import company_snapshot
+
+    company = company_snapshot(project)
+    if data.research_mode == "automatic" and not company.get("problem"):
+        raise HTTPException(
+            409, "Complete the company's problem, solution and target customers first"
         )
     mode = os.getenv("GENERATION_MODE", "template")
     if mode not in {"template", "llm"} or (
         mode == "llm" and (not os.getenv("LLM_API_KEY") or not os.getenv("LLM_MODEL"))
     ):
         raise HTTPException(503, "Generation provider is not configured")
+    from .customers import funnel
+
     snapshot = {
         **data.model_dump(mode="json"),
         "brand": brand.data,
+        "company": company,
+        "requires_research_confirmation": data.research_mode == "automatic"
+        or any(s.provider != "manual" for s in sources),
         "brand_version": brand.version,
         "project": {
             key: project.data[key]
@@ -283,11 +313,16 @@ def queue_workflow(
                 "title": s.title,
                 "excerpt": s.excerpt,
                 "observed_at": s.created_at,
-                "verification": "operator_attested",
+                "verification": "operator_attested"
+                if s.provider == "manual"
+                else "search_result_unverified",
+                "provider": s.provider,
             }
             for s in sources
+            if data.research_mode == "manual"
         ],
         "performance": performance_snapshot(db, project_id),
+        "customer_pipeline": funnel(db, project_id),
         "generation_mode": mode,
     }
     reserve_quota(db, context.organization.id)
@@ -338,8 +373,24 @@ def get_workflow(run_id: str, context: Tenant = Depends(tenant), db: Session = D
     tasks = db.scalars(
         select(LaunchTask).where(LaunchTask.run_id == run_id).order_by(LaunchTask.due_date)
     ).all()
+    research_step = next((step for step in steps if step.agent == "research"), None)
+    review_hash = (
+        digest(
+            {
+                "sources": run.context["sources"],
+                "company": run.context.get("company"),
+                "artifact": research_step.artifact,
+            }
+        )
+        if research_step
+        else None
+    )
     return {
         **run_dict(run),
+        "company": run.context.get("company"),
+        "research_only": run.context.get("research_only", False),
+        "research_review_hash": review_hash,
+        "research_confirmed": bool(run.context.get("research_confirmation")),
         "brand_version": run.context["brand_version"],
         "sources": run.context["sources"],
         "performance_baseline": run.context["performance"],
@@ -370,7 +421,10 @@ def cancel_workflow(run_id: str, context: Tenant = Depends(editor), db: Session 
     run = run_for(db, run_id, context)
     changed = db.execute(
         update(WorkflowRun)
-        .where(WorkflowRun.id == run.id, WorkflowRun.status.in_(["queued", "running"]))
+        .where(
+            WorkflowRun.id == run.id,
+            WorkflowRun.status.in_(["queued", "running", "research_review"]),
+        )
         .values(status="cancelled")
     )
     if changed.rowcount != 1:
@@ -410,7 +464,7 @@ def usage(context: Tenant = Depends(tenant), db: Session = Depends(get_db)):
     return {
         "period": period,
         "workflow_runs": row.runs_reserved if row else 0,
-        "limit": int(os.getenv("WORKFLOW_MONTHLY_RUN_LIMIT", "20")),
+        "limit": int(os.getenv("WORKFLOW_MONTHLY_RUN_LIMIT", "40")),
         "unit": "workflow runs; at most four model calls per run",
         "billing": "not_enabled",
     }
@@ -487,3 +541,62 @@ def revisions(draft_id: str, context: Tenant = Depends(tenant), db: Session = De
             for r in rows
         ]
     }
+
+
+class ResearchConfirmation(StrictModel):
+    research_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+@router.post("/workflows/{run_id}/confirm-research")
+def confirm_research(
+    run_id: str,
+    data: ResearchConfirmation,
+    context: Tenant = Depends(owner),
+    db: Session = Depends(get_db),
+):
+    run = run_for(db, run_id, context)
+    step = db.scalar(
+        select(AgentStep).where(AgentStep.run_id == run_id, AgentStep.agent == "research")
+    )
+    if run.status != "research_review" or not step:
+        raise HTTPException(409, "This workflow is not waiting for research confirmation")
+    from .company import company_snapshot
+
+    project = project_for(db, run.project_id, context)
+    current_brand = latest_brand(db, run.project_id)
+    if (
+        company_snapshot(project) != run.context.get("company")
+        or not current_brand
+        or current_brand.id != run.brand_version_id
+        or current_brand.status != "approved"
+    ):
+        raise HTTPException(
+            409, "Company or founder facts changed. Start fresh research before confirming."
+        )
+    current_hash = digest(
+        {
+            "sources": run.context["sources"],
+            "company": run.context.get("company"),
+            "artifact": step.artifact,
+        }
+    )
+    if data.research_hash != current_hash:
+        raise HTTPException(409, "Research changed; review the current brief before confirming")
+    snapshot = {
+        **run.context,
+        "research_confirmation": {
+            "hash": current_hash,
+            "by": context.user.id,
+            "at": datetime.now(UTC).isoformat(),
+        },
+    }
+    changed = db.execute(
+        update(WorkflowRun)
+        .where(WorkflowRun.id == run_id, WorkflowRun.status == "research_review")
+        .values(status="queued", claim_token=None, lease_until=None, context=snapshot)
+    )
+    if changed.rowcount != 1:
+        raise HTTPException(409, "Research confirmation changed concurrently")
+    audit(db, context, "research.confirmed", run_id)
+    db.refresh(run)
+    return run_dict(run)

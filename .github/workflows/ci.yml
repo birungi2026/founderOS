@@ -52,8 +52,8 @@ jobs:
         run: |
           cd backend
           alembic upgrade head
-          uvicorn app.main:app --port 8000 --no-access-log > /tmp/founderos-api.log 2>&1 &
-          python -m app.workflows.worker > /tmp/founderos-worker.log 2>&1 &
+          BRAVE_SEARCH_API_KEY=fixture-search-key GENERATION_MODE=template uvicorn app.main:app --port 8000 --no-access-log > /tmp/founderos-api.log 2>&1 &
+          FOUNDEROS_TEST_RESEARCH=1 BRAVE_SEARCH_API_KEY=fixture-search-key PYTHONPATH=. python ../frontend/tests/fixture_worker.py > /tmp/founderos-worker.log 2>&1 &
           cd ../frontend
           npm run start > /tmp/founderos-web.log 2>&1 &
       - name: Wait for services

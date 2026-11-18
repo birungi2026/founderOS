@@ -24,6 +24,9 @@ def main():
         page.get_by_label("Organization name").fill("Browser Test Workspace")
         page.get_by_role("button", name="Create account", exact=True).click()
         page.get_by_label("Product name").fill("Browser Growth Test")
+        page.get_by_label("Company problem", exact=True).fill(
+            "Small teams struggle to understand which messages turn interest into real customers."
+        )
         page.get_by_label("What does it do?").fill(
             "Helps small teams measure useful customer outcomes."
         )
@@ -32,6 +35,7 @@ def main():
         expect(
             page.get_by_role("heading", name="Browser Growth Test", exact=True)
         ).to_be_visible()
+        page.get_by_text("Optional sources and research evidence", exact=True).click()
         page.get_by_label("HTTPS source URL").fill("https://example.com/research")
         page.get_by_label("Source title").fill("Buyer interviews")
         page.get_by_label("Relevant excerpt").fill(
@@ -83,6 +87,8 @@ def main():
         )
         page.get_by_role("button", name="Save brand version", exact=True).click()
         page.get_by_role("button", name="Approve brand version 1", exact=True).click()
+        page.get_by_label("Research method", exact=True).select_option("manual")
+        page.get_by_label("Content cadence", exact=True).select_option("weekly")
         page.get_by_role("button", name="Start growth workflow", exact=True).click()
         expect(page.get_by_text("Ready for your review", exact=True)).to_be_visible(
             timeout=45000
@@ -121,6 +127,97 @@ def main():
         expect(page.get_by_text("Ready for your review", exact=True)).to_be_visible()
         page.get_by_role("button", name="Launch center", exact=True).click()
         expect(page.locator(".launch-task input").first).to_be_checked()
+        page.get_by_text("Customer pipeline and next actions", exact=True).click()
+        page.get_by_label("Customer or company name", exact=True).fill("First Customer")
+        page.get_by_label("Customer company website", exact=True).fill(
+            "https://first-customer.example"
+        )
+        page.get_by_role("button", name="Add potential customer", exact=True).click()
+        page.get_by_label("Lead stage", exact=True).select_option("won")
+        page.get_by_label(
+            "I confirm this customer has actually paid.", exact=True
+        ).check()
+        page.get_by_role("button", name="Save lead progress", exact=True).click()
+        expect(
+            page.get_by_text(
+                "49 more paying customers to reach the first milestone.", exact=True
+            )
+        ).to_be_visible()
+        # Automatic research + approval checkpoint + configurable routine.
+        page.get_by_text(
+            "Content routine: daily, weekly or monthly", exact=True
+        ).click()
+        page.get_by_label("Content frequency", exact=True).select_option("daily")
+        page.get_by_label("Posts per selected day", exact=True).fill("3")
+        page.get_by_label(
+            "Enable recurring research and draft generation", exact=True
+        ).check()
+        page.get_by_role("button", name="Save content routine", exact=True).click()
+        expect(page.get_by_text("Content routine enabled. Drafts will be prepared on your selected days.", exact=True)).to_be_visible()
+        pid = page.get_by_label("Saved project").input_value()
+        org = page.get_by_label("Organization", exact=True).input_value()
+        page.wait_for_function(
+            """async ({pid,org}) => {
+          const response = await fetch('http://localhost:8000/v1/projects/' + pid + '/workflows', {credentials:'include',headers:{'X-Organization-ID':org}});
+          const data = await response.json(); return data.runs?.some(run => run.status === 'research_review' && run.cadence === 'daily');
+        }""",
+            arg={"pid": pid, "org": org},
+            timeout=45000,
+        )
+        page.get_by_role("button", name="Refresh team activity", exact=True).click()
+        review_option = (
+            page.get_by_label("Campaign history")
+            .locator("option")
+            .filter(has_text="research_review")
+            .first
+        )
+        expect(review_option).to_have_count(1, timeout=15000)
+        page.get_by_label("Campaign history").select_option(
+            review_option.get_attribute("value")
+        )
+        expect(
+            page.get_by_role(
+                "button", name="Confirm research and create content", exact=True
+            )
+        ).to_be_visible(timeout=15000)
+        expect(
+            page.get_by_text("Public buyer research", exact=True).first
+        ).to_be_visible()
+        page.get_by_role(
+            "button", name="Confirm research and create content", exact=True
+        ).click()
+        expect(page.get_by_text("Ready for your review", exact=True)).to_be_visible(
+            timeout=45000
+        )
+        page.get_by_role("button", name="Content calendar", exact=True).click()
+        expect(
+            page.get_by_role("button", name="Save new revision", exact=True)
+        ).to_have_count(3)
+        page.get_by_label(
+            "Enable recurring research and draft generation", exact=True
+        ).uncheck()
+        page.get_by_label("Content frequency", exact=True).select_option("monthly")
+        page.get_by_label("Preparation day of month", exact=True).fill("5")
+        page.get_by_role("button", name="Save content routine", exact=True).click()
+        expect(
+            page.get_by_text(
+                "Routine paused; unfinished recurring jobs were cancelled.", exact=True
+            )
+        ).to_be_visible()
+        page.reload()
+        page.get_by_label("Saved project").select_option(label="Browser Growth Test")
+        page.get_by_text(
+            "Content routine: daily, weekly or monthly", exact=True
+        ).click()
+        expect(page.get_by_label("Content frequency", exact=True)).to_have_value(
+            "monthly"
+        )
+        expect(page.get_by_label("Posts per selected day", exact=True)).to_have_value(
+            "3"
+        )
+        expect(page.get_by_label("Preparation day of month", exact=True)).to_have_value(
+            "5"
+        )
         page.set_viewport_size({"width": 390, "height": 844})
         assert page.evaluate(
             "document.documentElement.scrollWidth <= window.innerWidth"
@@ -134,7 +231,7 @@ def main():
         assert not errors, errors
         browser.close()
         print(
-            "Browser smoke passed: accounts, legacy workflow, brand approval, five-agent run, seven-day calendar edit, video script, persistent launch checklist, reload, mobile layout"
+            "Browser smoke passed: accounts, brand and company setup, research confirmation, recurring routines, 50-customer funnel, calendar, video script, reload and mobile layout"
         )
 
 

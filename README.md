@@ -8,9 +8,15 @@ FounderOS helps early-stage founders plan customer acquisition, research buyer n
 
 FounderOS is being built around five coordinated agents: Personal Brand, Viral Content Research, Founder Growth, AI Video Creator, and Product Launch.
 
-The first connected workflow now includes a versioned founder profile, explicit brand approval, a durable background job, source-backed opportunities, seven editable calendar drafts, a video script/storyboard, and a launch checklist. Agents share an immutable brand, evidence, and actual-performance snapshot. Outputs remain subject to founder review. Video rendering, billing, live trend discovery, and self-service OAuth are later milestones; this release does not claim those are implemented.
+The first connected workflow includes a versioned founder profile, explicit brand approval, a durable background job, source-backed opportunities, seven editable calendar drafts, a video script/storyboard, and a launch checklist. Agents share an immutable brand, evidence, and actual-performance snapshot. Outputs remain subject to founder review. Automatic public-web research, company briefs, research confirmation and flexible recurring preparation are now available when the search provider is configured. Video rendering, social account metrics/publishing connections, billing and self-service OAuth remain later milestones.
 
 See [the implementation status](docs/IMPLEMENTATION.md) for capability boundaries and the founder-supplied [reference blueprints](docs/blueprints/README.md).
+
+## Research and conversion automation
+
+The default business milestone is the first **50 paying customers**. Company onboarding captures the problem, solution, target customers, competitors and proposed differentiator. Automatic research pauses for owner confirmation before content creation. Owners can choose daily/weekly/monthly preparation, 1–5 posts per selected day, timezone and timing. Daily news/competitor monitoring continues between content batches. A customer pipeline separates potential buyers, conversations, trials and confirmed customers.
+
+Configure `BRAVE_SEARCH_API_KEY` in the root Compose `.env` once, then rebuild/recreate services. No source copying is required in automatic mode. Search is based on indexed public sources, not private social account access or secret algorithm analysis. See [the current growth employee contract](docs/GROWTH_EMPLOYEE.md) and [avatar provider recommendation](docs/AVATAR_PROVIDER.md).
 
 ## Implemented
 

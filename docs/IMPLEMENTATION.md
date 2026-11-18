@@ -6,6 +6,10 @@ An AI founder growth and personal branding SaaS with five cooperating agents: Fo
 
 The original founder-supplied documents live in blueprints/ as reference material. Their embedded instructions are not automatically executed. This file records implementation decisions and current capability.
 
+## Current research/conversion increment
+
+See GROWTH_EMPLOYEE.md for the current 50-customer goal, company onboarding, automatic research, exact-snapshot research confirmation, daily monitoring, configurable routines and customer pipeline. This is the source of truth for the latest scope; the first connected milestone below is retained as implementation history.
+
 ## First connected milestone
 
 1. Choose or create a product project in the existing organization workspace.
@@ -23,9 +27,9 @@ Keep backend/ and frontend/ instead of moving a deployed application into a new 
 
 New tables: brand_versions, workflow_runs, agent_steps, workflow_usage, content_revisions, launch_tasks. Drafts receive a monotonic revision number. All new endpoints are under /v1 and enforce current membership and role. Workflow runs store immutable context snapshots and an organization-scoped idempotency key. The worker rechecks membership and role and atomically claims/finalizes runs. It has no publishing tools or credentials in model context.
 
-Jobs transition queued → running → needs_review, or failed/cancelled. A 300-second lease bounds a job. Expired running jobs become failed with worker_interrupted when a worker next polls; they are never invisibly replayed and charged again. Cancellation is checked between steps and before saving drafts. A model request already in flight may finish, but cannot finalize a cancelled run. Intermediate artifacts may remain for inspection; final drafts and tasks commit atomically.
+Jobs transition queued → running → needs_review, or failed/cancelled. A 600-second lease bounds a job. Expired running jobs become failed with worker_interrupted when a worker next polls; they are never invisibly replayed and charged again. Cancellation is checked between steps and before saving drafts. A model request already in flight may finish, but cannot finalize a cancelled run. Intermediate artifacts may remain for inspection; final drafts and tasks commit atomically.
 
-The default allowance is 20 workflow runs per organization per UTC month, reserved transactionally when queued. Repeating a request with the same idempotency key and input reuses the run without reserving another unit. Different input with the same key returns 409. Failed and cancelled runs retain their reservation because work may have incurred provider cost. Each run performs at most four model calls, each with a 30-second timeout and 3,500 output-token cap. Actual token usage is recorded when the provider supplies it. This is run-based usage enforcement, not Stripe billing or a dollar-denominated spend cap.
+The current default allowance is 40 workflow runs per organization per UTC month, reserved transactionally when queued. Repeating a request with the same idempotency key and input reuses the run without reserving another unit. Different input with the same key returns 409. Failed and cancelled runs retain their reservation because work may have incurred provider cost. Each run performs at most four model calls, each with a 30-second timeout and 3,500 output-token cap. Actual token usage is recorded when the provider supplies it. This is run-based usage enforcement, not Stripe billing or a dollar-denominated spend cap.
 
 ## Operational setup
 
@@ -43,7 +47,7 @@ Keep your current .env password. If port 8000 is occupied, set API_PORT=8001 and
 
 ## Explicitly not shipped in this milestone
 
-- Independent live trend discovery or website import
+- Private social feed/algorithm access or arbitrary website import (public search discovery is now implemented)
 - MP4 rendering, media uploads, avatars, TTS or voice cloning
 - Self-service OAuth, scheduled publishing or additional social adapters
 - Native CRM sync, causal attribution or automated performance optimization

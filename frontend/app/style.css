@@ -395,3 +395,43 @@ blockquote {
     grid-template-columns: 1fr;
   }
 }
+
+.conversion-center {
+  border-top: 4px solid #b28b45;
+}
+.customer-goal {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin: 24px 0;
+}
+.customer-goal > strong {
+  font:
+    52px Georgia,
+    serif;
+}
+.customer-goal > strong > span {
+  font-size: 24px;
+  color: var(--muted);
+}
+.daily-settings {
+  padding: 20px;
+  background: #f1f4ec;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 24px 0;
+}
+.lead-card {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f6f7f1;
+}
+.conversion-center details {
+  margin-top: 24px;
+}
+@media (max-width: 640px) {
+  .customer-goal {
+    display: block;
+  }
+}

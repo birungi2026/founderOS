@@ -2,6 +2,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import { API, api } from "./api";
 import GrowthTeam from "./GrowthTeam";
+import DailyEmployee from "./DailyEmployee";
+import CompanyBrief from "./CompanyBrief";
 type Org = { id: string; name: string; role: string };
 type Identity = { email: string; organizations: Org[] };
 type Strategy = {
@@ -36,7 +38,7 @@ export default function Home() {
   const [name, setName] = useState(""),
     [description, setDescription] = useState(""),
     [audience, setAudience] = useState(""),
-    [goal, setGoal] = useState(10);
+    [goal, setGoal] = useState(50);
   const [strategy, setStrategy] = useState<Strategy | null>(null),
     [drafts, setDrafts] = useState<Draft[]>([]),
     [sources, setSources] = useState<Source[]>([]);
@@ -52,6 +54,8 @@ export default function Home() {
     signups: 0,
     paying_customers: 0,
   });
+  const [problem, setProblem] = useState("");
+  const [pipelineRefresh, setPipelineRefresh] = useState(0);
   const [memberEmail, setMemberEmail] = useState(""),
     [memberRole, setMemberRole] = useState("viewer");
   const [audit, setAudit] = useState<
@@ -154,6 +158,7 @@ export default function Home() {
     const p = await api("/projects", orgId, {
       product_name: name,
       description,
+      problem,
       audience,
       goal_customers: goal,
     });
@@ -313,7 +318,11 @@ export default function Home() {
           <section className="workspace">
             <label>
               Organization
-              <select value={orgId} onChange={(e) => setOrgId(e.target.value)}>
+              <select
+                aria-label="Organization"
+                value={orgId}
+                onChange={(e) => setOrgId(e.target.value)}
+              >
                 {identity.organizations.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.name} · {o.role}
@@ -348,6 +357,17 @@ export default function Home() {
                     maxLength={100}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Company problem
+                  <textarea
+                    aria-label="Company problem"
+                    required
+                    minLength={10}
+                    maxLength={2000}
+                    value={problem}
+                    onChange={(e) => setProblem(e.target.value)}
                   />
                 </label>
                 <label>
@@ -395,25 +415,45 @@ export default function Home() {
                   {projects.find((p) => p.id === projectId)?.product_name}
                 </h2>
               </div>
+              <DailyEmployee
+                key={"daily" + orgId + projectId}
+                orgId={orgId}
+                projectId={projectId}
+                canWrite={canWrite}
+                isOwner={role === "owner"}
+                refreshKey={pipelineRefresh}
+              />
+              <CompanyBrief
+                key={"company" + orgId + projectId}
+                orgId={orgId}
+                projectId={projectId}
+                canWrite={canWrite}
+              />
               <GrowthTeam
                 key={orgId + projectId}
                 orgId={orgId}
                 projectId={projectId}
                 canWrite={canWrite}
                 sourceCount={sources.length}
+                isOwner={role === "owner"}
                 onComplete={async () => {
                   setDrafts(
                     (await api(`/projects/${projectId}/drafts`, orgId)).drafts,
                   );
+                  setSources(
+                    (await api(`/projects/${projectId}/sources`, orgId))
+                      .sources,
+                  );
+                  setPipelineRefresh((value) => value + 1);
                 }}
               />
-              <section className="panel">
-                <span className="eyebrow">01 / RESEARCH</span>
-                <h2>Ground your plan in evidence.</h2>
+              <details className="panel">
+                <summary>Optional sources and research evidence</summary>
                 <p>
-                  Add excerpts from sources you have permission to use. Sources
-                  are operator-attested; FounderOS does not independently verify
-                  or scrape them.
+                  The growth employee collects search evidence automatically
+                  when the search service is connected. You can optionally add
+                  your own research here. Search excerpts and supplied notes are
+                  evidence to assess, not independently verified facts.
                 </p>
                 {sources.map((s) => (
                   <article key={s.id}>
@@ -467,7 +507,7 @@ export default function Home() {
                     <button>Add research source</button>
                   </form>
                 )}
-              </section>
+              </details>
               <section className="panel">
                 <span className="eyebrow">OPTIONAL / QUICK PLAN</span>
                 <h2>Quick growth plan.</h2>
