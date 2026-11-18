@@ -133,12 +133,14 @@ export default function DailyEmployee({
   canWrite,
   isOwner,
   refreshKey,
+  section,
 }: {
   orgId: string;
   projectId: string;
   canWrite: boolean;
   isOwner: boolean;
   refreshKey: number;
+  section?: string;
 }) {
   const [leads, setLeads] = useState<Lead[]>([]),
     [funnel, setFunnel] = useState<Funnel | null>(null),
@@ -266,7 +268,7 @@ export default function DailyEmployee({
           </small>
         </>
       )}
-      <details className="daily-settings">
+      <details className="daily-settings" open={section === "routine"}>
         <summary>Content routine: daily, weekly or monthly</summary>
         <p>
           Set a routine once. The employee refreshes research and prepares your
@@ -433,7 +435,7 @@ export default function DailyEmployee({
           paused or missed day is not backfilled with a burst of posts.
         </small>
       </details>
-      <details>
+      <details open={section === "customers"}>
         <summary>Customer pipeline and next actions</summary>
         {canWrite && (
           <form

@@ -435,3 +435,197 @@ blockquote {
     display: block;
   }
 }
+
+/* Focused workspace: navigation separates setup, employee work and manual tools. */
+[hidden] {
+  display: none !important;
+}
+.workspace-headline {
+  font-size: clamp(32px, 4vw, 48px);
+  margin: 30px 0 12px;
+}
+.workspace-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  background: #e7eee4;
+  border-radius: 12px;
+  margin: 24px 0;
+}
+.workspace-nav button {
+  background: transparent;
+  color: var(--ink);
+  margin: 0;
+  padding: 10px 13px;
+  border: 1px solid transparent;
+}
+.workspace-nav button[aria-current="page"] {
+  background: var(--paper);
+  border-color: var(--line);
+  box-shadow: 0 2px 5px #18382f0c;
+}
+.view-description {
+  margin: 26px 0 10px;
+}
+.view-description h2 {
+  margin-bottom: 8px;
+}
+.view-description p {
+  margin-top: 0;
+}
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+}
+.overview-grid .panel {
+  margin: 0;
+}
+.next-action {
+  background: #e3eee0;
+}
+.goal-summary h2 {
+  font-size: 48px;
+  margin: 12px 0;
+}
+.goal-summary h2 span {
+  font-size: 24px;
+  color: var(--muted);
+}
+.goal-summary button {
+  display: block;
+  margin-top: 18px;
+}
+.employee-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+.employee-status button {
+  flex-shrink: 0;
+}
+.setup-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.setup-steps li {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+}
+.setup-steps li > div {
+  flex: 1;
+}
+.setup-steps h3,
+.setup-steps p {
+  margin: 0 0 5px;
+}
+.step-number {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-weight: bold;
+}
+.step-number.complete {
+  background: var(--green);
+  color: white;
+}
+.capability-note {
+  border-left: 3px solid #b68c39;
+  background: #fbf4e5;
+  padding: 16px 22px;
+  border-radius: 6px;
+}
+.workspace-footnote {
+  font-size: 13px;
+}
+[data-team-view="profile"] .command-center,
+[data-team-view="content"] .brand-studio {
+  display: none;
+}
+[data-employee-view="routine"]
+  .conversion-center
+  > :not(.daily-settings):not([role="alert"]):not([role="status"]) {
+  display: none;
+}
+[data-employee-view="customers"] .daily-settings {
+  display: none;
+}
+button:focus-visible,
+summary:focus-visible,
+select:focus-visible {
+  outline: 3px solid #bc8e38;
+  outline-offset: 3px;
+}
+@media (max-width: 650px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+  .workspace-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .workspace-nav button {
+    text-align: left;
+    font-size: 12px;
+  }
+  .employee-status {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .setup-steps li {
+    gap: 10px;
+  }
+  .setup-steps button {
+    padding: 9px;
+  }
+}
+.employee-workspace {
+  padding-top: 24px;
+}
+.employee-workspace header {
+  padding-bottom: 12px;
+}
+.employee-workspace .workspace-headline {
+  font-size: clamp(28px, 3vw, 38px);
+  margin: 24px 0;
+}
+.employee-workspace .workspace {
+  padding: 8px 18px;
+}
+.employee-workspace .workspace label {
+  margin: 8px 0;
+}
+.employee-workspace .section-title {
+  margin: 22px 0 0;
+}
+.employee-workspace .section-title h2 {
+  font-size: 28px;
+  margin-bottom: 0;
+}
+.employee-workspace .workspace-nav {
+  margin: 18px 0;
+}
+.employee-workspace .workspace-nav button {
+  padding: 9px 10px;
+  font-size: 13px;
+}
+.journey-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.agent-details {
+  margin: 18px 0;
+}

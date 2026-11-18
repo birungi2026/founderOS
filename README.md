@@ -101,3 +101,5 @@ See [integration contracts](docs/INTEGRATIONS.md), [deployment notes](docs/DEPLO
 For Windows Docker users: keep your existing `.env` password when updating. Compose starts the worker automatically. If port 8000 is occupied, put `API_PORT=8001` and `NEXT_PUBLIC_API_URL=http://localhost:8001` in the root `.env`, then run `docker compose up -d --build`. These are file settings, not PowerShell commands.
 
 Social account OAuth access for Instagram professional accounts and Facebook Pages is available through the project account panel. See [configuration, permissions and current limits](docs/SOCIAL_ACCOUNTS.md). Retrieved snapshots inform new agent workflows; publishing, messaging and unattended refresh are separate integrations.
+
+The [guided founder workspace](docs/WORKSPACE.md) opens on an actionable Overview, with separate setup, accounts, employee work, routine and customer sections. Manual tools and administration are under Advanced tools.

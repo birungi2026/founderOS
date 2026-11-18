@@ -706,26 +706,39 @@ export default function GrowthTeam({
         )}
       </section>
       <section className="panel command-center">
-        <span className="eyebrow">YOUR COORDINATED AI GROWTH TEAM</span>
-        <h2>One brief. Five connected agents.</h2>
+        <span className="eyebrow">EMPLOYEE WORK</span>
+        <h2>Research first. Content after your confirmation.</h2>
         <p>
-          The team shares your approved brand, supplied research and actual
-          performance baseline. All content stays in review.
+          Start one assignment. Your employee researches the opportunity, asks
+          you to confirm its findings and prepares content for review.
         </p>
-        <div className="team-roster">
-          {agentNames.map(([id, name]) => (
-            <div
-              key={id}
-              className={artifact(id) ? "agent-card done" : "agent-card"}
-            >
-              <span>{artifact(id) ? "✓" : "○"}</span>
-              <strong>{name}</strong>
-              <small>
-                {artifact(id) ? "Output saved" : "Ready to coordinate"}
-              </small>
-            </div>
-          ))}
-        </div>
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
+        )}
+        {notice && (
+          <p role="status" className="notice">
+            {notice}
+          </p>
+        )}
+        <details className="agent-details">
+          <summary>How your employee works</summary>
+          <div className="team-roster">
+            {agentNames.map(([id, name]) => (
+              <div
+                key={id}
+                className={artifact(id) ? "agent-card done" : "agent-card"}
+              >
+                <span>{artifact(id) ? "✓" : "○"}</span>
+                <strong>{name}</strong>
+                <small>
+                  {artifact(id) ? "Output saved" : "Ready to coordinate"}
+                </small>
+              </div>
+            ))}
+          </div>
+        </details>
         <p className="readiness">
           Brand: {brand?.status === "approved" ? "approved" : "needs approval"}{" "}
           · Research: {sourceCount} source{sourceCount === 1 ? "" : "s"} · Runs
