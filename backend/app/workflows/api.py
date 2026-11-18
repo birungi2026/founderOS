@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import UTC, datetime
 from typing import Annotated
 
@@ -323,6 +324,7 @@ def queue_workflow(
         ],
         "performance": performance_snapshot(db, project_id),
         "customer_pipeline": funnel(db, project_id),
+        "social_accounts": social_context(db, project_id),
         "generation_mode": mode,
     }
     reserve_quota(db, context.organization.id)
@@ -600,3 +602,28 @@ def confirm_research(
     audit(db, context, "research.confirmed", run_id)
     db.refresh(run)
     return run_dict(run)
+
+
+def social_context(db, project_id):
+    from ..models import SocialAccount
+
+    return [
+        {
+            "provider": row.provider,
+            "name": row.name,
+            "data": {
+                "observed_at": row.snapshot.get("observed_at"),
+                "profile": row.snapshot.get("profile", {}),
+                "posts": row.snapshot.get("posts", [])[:3],
+            },
+            "verification": "provider_account_data_untrusted_content",
+        }
+        for row in db.scalars(
+            select(SocialAccount).where(
+                SocialAccount.project_id == project_id,
+                SocialAccount.status == "connected",
+                SocialAccount.expires_at > time.time(),
+            )
+        )
+        if row.snapshot
+    ]

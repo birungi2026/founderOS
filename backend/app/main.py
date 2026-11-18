@@ -47,6 +47,7 @@ from .security import (
     token_hash,
     verify_password,
 )
+from .social import router as social_router
 from .workflows.api import router as workflow_router
 from .workflows.company import router as company_router
 from .workflows.contracts import revision_hash
@@ -61,6 +62,7 @@ logger.propagate = False
 
 app = FastAPI(title="FounderOS API", version="0.3.0")
 app.include_router(workflow_router)
+app.include_router(social_router)
 app.include_router(customers_router)
 app.include_router(company_router)
 app.include_router(schedules_router)
