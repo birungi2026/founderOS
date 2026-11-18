@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { API, api } from "./api";
+import GrowthTeam from "./GrowthTeam";
 type Org = { id: string; name: string; role: string };
 type Identity = { email: string; organizations: Org[] };
 type Strategy = {
@@ -15,33 +16,13 @@ type Draft = {
   content: string;
   status: string;
   generation: { mode: string };
+  revision_hash: string;
 };
 type Source = { id: string; url: string; title: string; excerpt: string };
 type Analytics = {
   totals: Record<string, number>;
   channels: Record<string, Record<string, number>>;
 };
-async function api(path: string, org = "", data?: unknown) {
-  const r = await fetch(API + path, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(org ? { "X-Organization-ID": org } : {}),
-    },
-    ...(data === undefined
-      ? {}
-      : { method: "POST", body: JSON.stringify(data) }),
-  });
-  if (!r.ok) {
-    const b = await r.json().catch(() => ({}));
-    throw new Error(
-      typeof b.detail === "string"
-        ? b.detail
-        : `Request failed (${r.status}). Check the form values.`,
-    );
-  }
-  return r.json();
-}
 export default function Home() {
   const [identity, setIdentity] = useState<Identity | null>(null),
     [booting, setBooting] = useState(true),
@@ -188,7 +169,12 @@ export default function Home() {
     setDrafts((await api(`/projects/${projectId}/drafts`, orgId)).drafts);
   }
   async function review(id: string, decision: string) {
-    const d = await api(`/drafts/${id}/review?decision=${decision}`, orgId, {});
+    const current = drafts.find((d) => d.id === id);
+    const d = await api(
+      `/drafts/${id}/review?decision=${decision}&revision=${current?.revision_hash || ""}`,
+      orgId,
+      {},
+    );
     setDrafts((old) => old.map((x) => (x.id === id ? d : x)));
   }
   async function publish(id: string) {
@@ -246,9 +232,9 @@ export default function Home() {
         )}
       </header>
       <h1>
-        From first launch
+        Your AI-powered
         <br />
-        to first customers.
+        growth team.
       </h1>
       <p className="intro">
         A shared workspace to plan your growth, review campaigns, and learn what
@@ -409,6 +395,18 @@ export default function Home() {
                   {projects.find((p) => p.id === projectId)?.product_name}
                 </h2>
               </div>
+              <GrowthTeam
+                key={orgId + projectId}
+                orgId={orgId}
+                projectId={projectId}
+                canWrite={canWrite}
+                sourceCount={sources.length}
+                onComplete={async () => {
+                  setDrafts(
+                    (await api(`/projects/${projectId}/drafts`, orgId)).drafts,
+                  );
+                }}
+              />
               <section className="panel">
                 <span className="eyebrow">01 / RESEARCH</span>
                 <h2>Ground your plan in evidence.</h2>
@@ -471,8 +469,12 @@ export default function Home() {
                 )}
               </section>
               <section className="panel">
-                <span className="eyebrow">02 / STRATEGIST</span>
-                <h2>Choose the next useful move.</h2>
+                <span className="eyebrow">OPTIONAL / QUICK PLAN</span>
+                <h2>Quick growth plan.</h2>
+                <p>
+                  This standalone tool uses product details. Use the coordinated
+                  team above for a brand-aware weekly campaign.
+                </p>
                 {canWrite && (
                   <button onClick={() => run(plan)}>
                     Generate growth plan
@@ -504,8 +506,8 @@ export default function Home() {
                 )}
               </section>
               <section className="panel">
-                <span className="eyebrow">03 / EXECUTOR</span>
-                <h2>Words ready for your review.</h2>
+                <span className="eyebrow">CAMPAIGN APPROVAL INBOX</span>
+                <h2>Review your campaign content.</h2>
                 {canWrite && (
                   <button onClick={() => run(generate)}>
                     Prepare campaign drafts

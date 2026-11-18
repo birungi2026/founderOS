@@ -1,8 +1,16 @@
 # FounderOS
 
-**The AI Growth Employee for Founders.**
+**Your AI-powered growth team.**
 
 FounderOS helps early-stage founders plan customer acquisition, research buyer needs, review campaign drafts, and measure conversion in a shared organization workspace.
+
+## Connected growth team
+
+FounderOS is being built around five coordinated agents: Personal Brand, Viral Content Research, Founder Growth, AI Video Creator, and Product Launch.
+
+The first connected workflow now includes a versioned founder profile, explicit brand approval, a durable background job, source-backed opportunities, seven editable calendar drafts, a video script/storyboard, and a launch checklist. Agents share an immutable brand, evidence, and actual-performance snapshot. Outputs remain subject to founder review. Video rendering, billing, live trend discovery, and self-service OAuth are later milestones; this release does not claim those are implemented.
+
+See [the implementation status](docs/IMPLEMENTATION.md) for capability boundaries and the founder-supplied [reference blueprints](docs/blueprints/README.md).
 
 ## Implemented
 
@@ -26,6 +34,14 @@ source .venv/bin/activate
 pip install -r requirements-lock.txt
 alembic upgrade head
 uvicorn app.main:app --reload --no-access-log
+```
+
+Run the growth worker in a second terminal with the same backend environment:
+
+```bash
+cd backend
+source .venv/bin/activate
+python -m app.workflows.worker
 ```
 
 In another terminal:
@@ -75,3 +91,5 @@ npm run build
 CI exercises SQLite, PostgreSQL, migrations, backend lint, and the frontend production build. Tests mock LLM and publishing providers; they never send real messages. A repeatable browser workflow is in `frontend/tests/smoke.py` (requires Python Playwright and Chromium, plus the running local services).
 
 See [integration contracts](docs/INTEGRATIONS.md), [deployment notes](docs/DEPLOYMENT.md), and the [roadmap](docs/ROADMAP.md) for configuration and remaining work.
+
+For Windows Docker users: keep your existing `.env` password when updating. Compose starts the worker automatically. If port 8000 is occupied, put `API_PORT=8001` and `NEXT_PUBLIC_API_URL=http://localhost:8001` in the root `.env`, then run `docker compose up -d --build`. These are file settings, not PowerShell commands.

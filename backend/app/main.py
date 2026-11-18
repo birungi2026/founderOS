@@ -47,6 +47,8 @@ from .security import (
     token_hash,
     verify_password,
 )
+from .workflows.api import router as workflow_router
+from .workflows.contracts import revision_hash
 
 logger = logging.getLogger("founderos.requests")
 logger.setLevel(logging.INFO)
@@ -54,14 +56,15 @@ if not logger.handlers:
     logger.addHandler(logging.StreamHandler())
 logger.propagate = False
 
-app = FastAPI(title="FounderOS API", version="0.2.0")
+app = FastAPI(title="FounderOS API", version="0.3.0")
+app.include_router(workflow_router)
 origins = os.getenv("FRONTEND_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "X-Organization-ID"],
+    allow_headers=["Content-Type", "X-Organization-ID", "Idempotency-Key"],
 )
 # Single-process limiter. Production multi-replica deployments require a shared ingress limiter.
 rate_buckets: OrderedDict = OrderedDict()
@@ -194,6 +197,8 @@ def draft_dict(d):
         "content": d.content,
         "status": d.status,
         "generation": d.generation,
+        "revision_hash": revision_hash(d),
+        "revision_number": d.revision_number,
     }
 
 
@@ -434,12 +439,19 @@ def list_drafts(project_id: str, context: Tenant = Depends(tenant), db: Session 
 def review_draft(
     draft_id: str,
     decision: Literal["approved", "rejected"],
+    revision: str | None = None,
     context: Tenant = Depends(editor),
     db: Session = Depends(get_db),
 ):
     d = require_draft(db, draft_id, context)
+    if (revision is not None or d.generation.get("run_id")) and revision != revision_hash(d):
+        raise HTTPException(409, "Content revision changed. Reload and review the current draft.")
     changed = db.execute(
-        update(Draft).where(Draft.id == d.id, Draft.status == "pending").values(status=decision)
+        update(Draft)
+        .where(
+            Draft.id == d.id, Draft.status == "pending", Draft.revision_number == d.revision_number
+        )
+        .values(status=decision)
     )
     if changed.rowcount != 1:
         raise HTTPException(409, "Only pending drafts can be reviewed")
