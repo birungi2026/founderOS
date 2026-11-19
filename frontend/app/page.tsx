@@ -4,6 +4,7 @@ import { API, api } from "./api";
 import GrowthTeam from "./GrowthTeam";
 import DailyEmployee from "./DailyEmployee";
 import CompanyBrief from "./CompanyBrief";
+import FounderInterview from "./FounderInterview";
 import SocialAccounts from "./SocialAccounts";
 import EmployeeOverview, {
   WorkspaceView,
@@ -542,6 +543,11 @@ export default function Home() {
                 />
               </div>
               <div hidden={view !== "profile"}>
+                <FounderInterview
+                  key={"interview" + orgId + projectId}
+                  canWrite={canWrite}
+                  active={view === "profile"}
+                />
                 <CompanyBrief
                   key={"company" + orgId + projectId}
                   orgId={orgId}

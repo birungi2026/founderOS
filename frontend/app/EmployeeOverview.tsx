@@ -297,7 +297,7 @@ export default function EmployeeOverview({
       )}
       <p className="workspace-footnote">
         Available now: research, confirmation, drafts and customer tracking.
-        Video interview capture, avatar video rendering and automatic social
+        Live interview processing, avatar video rendering and automatic social
         publishing are still upcoming.
       </p>
     </div>

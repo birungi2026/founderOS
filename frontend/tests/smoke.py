@@ -11,7 +11,11 @@ def main():
     with sync_playwright() as p:
         executable = os.getenv("CHROMIUM_PATH")
         browser = p.chromium.launch(
-            **({"executable_path": executable} if executable else {})
+            args=[
+                "--use-fake-device-for-media-stream",
+                "--use-fake-ui-for-media-stream",
+            ],
+            **({"executable_path": executable} if executable else {}),
         )
         page = browser.new_page(viewport={"width": 1440, "height": 1000})
         errors = []
@@ -118,6 +122,66 @@ def main():
         expect(page.get_by_text("25%", exact=True)).to_be_visible()
         # Connected five-agent workflow shares one approved founder profile.
         section("1. Company & founder")
+        interview = page.get_by_role(
+            "region", name="Founder video interview", exact=True
+        )
+        interview.get_by_role(
+            "button", name="Record founder interview", exact=True
+        ).click()
+        expect(
+            interview.get_by_role("button", name="Stop recording", exact=True)
+        ).to_be_visible()
+        page.wait_for_function(
+            """() => { const video = document.querySelector('video[aria-label="Live interview camera preview"]'); if (!video?.srcObject) return false; window.interviewTestTracks = video.srcObject.getTracks(); return window.interviewTestTracks.length === 2; }"""
+        )
+        section("2. Social accounts")
+        page.wait_for_function(
+            "() => window.interviewTestTracks.every(track => track.readyState === 'ended')"
+        )
+        section("1. Company & founder")
+        expect(
+            interview.get_by_label("Recorded founder interview", exact=True)
+        ).to_be_visible()
+        interview.get_by_role(
+            "button", name="Delete local interview and reset demo", exact=True
+        ).click()
+        interview.get_by_role("button", name="Use sample interview", exact=True).click()
+        interview.get_by_role(
+            "button", name="Continue to review brief", exact=True
+        ).click()
+        interview.get_by_role(
+            "button", name="Confirm brief and continue", exact=True
+        ).click()
+        expect(
+            interview.get_by_role("button", name="Continue to HeyGen setup", exact=True)
+        ).to_be_disabled()
+        interview.get_by_role("checkbox").check()
+        interview.get_by_role(
+            "button", name="Continue to HeyGen setup", exact=True
+        ).click()
+        expect(
+            interview.get_by_text(
+                "Provider: HeyGen · Demo adapter · Not connected", exact=True
+            )
+        ).to_be_visible()
+        interview.get_by_role(
+            "button", name="Prepare placeholder sample", exact=True
+        ).click()
+        expect(
+            interview.get_by_text(
+                "No synthetic video or cloned audio has been generated.", exact=True
+            )
+        ).to_be_visible()
+        interview.get_by_role("checkbox").check()
+        expect(
+            interview.get_by_text("Demo onboarding complete.", exact=False)
+        ).to_be_visible()
+        interview.get_by_role(
+            "button", name="Delete local interview and reset demo", exact=True
+        ).click()
+        expect(
+            interview.get_by_role("button", name="Continue to review brief", exact=True)
+        ).to_be_disabled()
         page.get_by_label("Founder name", exact=True).fill("Ada Founder")
         page.get_by_label("Your founder story", exact=True).fill(
             "I started this company after helping small teams understand their customer conversion data."

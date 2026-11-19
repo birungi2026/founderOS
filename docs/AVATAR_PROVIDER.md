@@ -21,3 +21,11 @@ A key SaaS constraint: HeyGen documents pre-recorded consent submission through 
 | [ElevenLabs](https://elevenlabs.io/docs/eleven-api/concepts/voice-cloning) | Optional specialist audio layer if voice quality/control needs a separate vendor | Voice-only; it does not generate the founder's face. Professional voice clones require the speaker's own verification workflow. |
 
 Use the founder's authorized likeness and voice with explicit, revocable consent. Generated media should be represented transparently and labeled where appropriate. The product should optimize useful, authentic communication rather than promise to conceal synthetic origin. The interview informs self-described facts and speaking style; it does not justify inferring hidden personality traits from facial features.
+
+## FounderOS placeholder onboarding
+
+Company & founder now contains a five-step **HeyGen demo**: guided interview, reviewed notes/delivery preferences, simulated consent, provider setup and placeholder sample approval. Founders can record up to three minutes in supported browsers, upload a video up to 100 MB or use fictional sample notes. Camera capture requires localhost or HTTPS and browser permission.
+
+Recordings use browser memory/object URLs only; they are not uploaded, transcribed, saved to the account or sent to a provider. Capture stops when leaving the section; switching company/reloading or deleting the demo removes the local preview. Notes and demo consent do not modify approved founder memory or create a legally verified consent record. The sample is a labeled storyboard placeholder, not synthetic footage or cloned audio. Approval completes only the demo and never activates content generation or publishing.
+
+The live adapter still needs secure media storage, transcription, provider-specific consent/identity recording, token management, enrollment/training status and actual sample rendering/approval. No HeyGen API key is needed for this placeholder; adding a fake key cannot produce a real avatar.

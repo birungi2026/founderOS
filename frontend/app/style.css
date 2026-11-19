@@ -629,3 +629,59 @@ select:focus-visible {
 .agent-details {
   margin: 18px 0;
 }
+.interview-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+}
+.interview-steps li {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+}
+.interview-steps li[aria-current="step"] {
+  background: var(--green);
+  color: white;
+}
+.interview-prompt {
+  padding: 20px;
+  background: #edf2e8;
+  border-radius: 10px;
+  margin: 20px 0;
+}
+.interview-studio video {
+  display: block;
+  width: 100%;
+  max-height: 400px;
+  background: #112d26;
+  border-radius: 10px;
+  margin: 16px 0;
+}
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: #edf2e8;
+  border: 1px dashed #8ea997;
+  border-radius: 12px;
+  padding: 24px;
+}
+.avatar-placeholder > span {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #d4e3d2;
+  font-size: 30px;
+  flex-shrink: 0;
+}
+.interview-studio blockquote {
+  margin: 20px 0;
+  padding: 16px;
+  border-left: 3px solid var(--green);
+}
