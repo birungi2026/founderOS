@@ -15,7 +15,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import select, text, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -139,10 +139,14 @@ class Credentials(BaseModel):
 
 
 class Registration(Credentials):
+    onboarding_mode: Literal["business", "personal"] = "business"
     organization_name: str = Field(min_length=2, max_length=100)
 
 
 class ProjectInput(BaseModel):
+    mode: Literal["business", "personal"] = "business"
+    personal_goal: Literal["followers", "newsletter_subscribers", "inquiries"] = "followers"
+    personal_target: int = Field(default=1000, ge=1, le=10000000)
     product_name: str = Field(min_length=2, max_length=100)
     description: str = Field(min_length=10, max_length=2000)
     problem: str = Field(default="", max_length=2000)
@@ -259,7 +263,11 @@ def ready(db: Session = Depends(get_db)):
 
 @app.post("/auth/register", status_code=201)
 def register(data: Registration, response: Response, db: Session = Depends(get_db)):
-    user = User(email=data.email, password_hash=hash_password(data.password))
+    user = User(
+        email=data.email,
+        password_hash=hash_password(data.password),
+        onboarding_mode=data.onboarding_mode,
+    )
     org = Organization(name=data.organization_name)
     db.add_all([user, org])
     try:
@@ -305,6 +313,7 @@ def me(user: User = Depends(current_user), db: Session = Depends(get_db)):
     return {
         "id": user.id,
         "email": user.email,
+        "onboarding_mode": user.onboarding_mode,
         "organizations": [{"id": o.id, "name": o.name, "role": role} for o, role in rows],
     }
 
@@ -661,3 +670,44 @@ def export_csv(project_id: str, context: Tenant = Depends(tenant), db: Session =
         media_type="text/csv",
         headers={"Content-Disposition": 'attachment; filename="founderos-analytics.csv"'},
     )
+
+
+class PersonalProgressInput(BaseModel):
+    current: int = Field(ge=0, le=100000000)
+    expected_version: int = Field(ge=0)
+
+
+@app.post("/projects/{project_id}/personal-progress")
+def personal_progress(
+    project_id: str,
+    data: PersonalProgressInput,
+    context: Tenant = Depends(editor),
+    db: Session = Depends(get_db),
+):
+    project = require_project(db, project_id, context)
+    db.refresh(project, with_for_update=True)
+    if project.data.get("mode", "business") != "personal":
+        raise HTTPException(409, "This workspace tracks business customers")
+    if project.data.get("personal_progress_version", 0) != data.expected_version:
+        raise HTTPException(409, "Progress changed; reload before editing")
+    changed = db.execute(
+        update(Project)
+        .where(
+            Project.id == project.id,
+            func.coalesce(Project.data["personal_progress_version"].as_integer(), 0)
+            == data.expected_version,
+        )
+        .values(
+            data={
+                **project.data,
+                "personal_current": data.current,
+                "personal_progress_version": data.expected_version + 1,
+            }
+        )
+        .execution_options(synchronize_session=False)
+    )
+    if changed.rowcount != 1:
+        raise HTTPException(409, "Progress changed; reload before editing")
+    db.expire(project)
+    audit(db, context, "personal.progress_recorded", project.id)
+    return project_dict(project)

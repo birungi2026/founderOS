@@ -22,6 +22,9 @@ class User(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     email: Mapped[str] = mapped_column(String(254), unique=True)
     password_hash: Mapped[str] = mapped_column(String(300))
+    onboarding_mode: Mapped[str] = mapped_column(
+        String(20), default="business", server_default="business"
+    )
 
 
 class Organization(Base):

@@ -285,7 +285,11 @@ def queue_workflow(
     from .company import company_snapshot
 
     company = company_snapshot(project)
-    if data.research_mode == "automatic" and not company.get("problem"):
+    if (
+        data.research_mode == "automatic"
+        and project.data.get("mode", "business") != "personal"
+        and not company.get("problem")
+    ):
         raise HTTPException(
             409, "Complete the company's problem, solution and target customers first"
         )
@@ -304,8 +308,21 @@ def queue_workflow(
         or any(s.provider != "manual" for s in sources),
         "brand_version": brand.version,
         "project": {
-            key: project.data[key]
-            for key in ["product_name", "description", "audience", "goal_customers"]
+            key: (
+                None
+                if key == "goal_customers" and project.data.get("mode") == "personal"
+                else project.data.get(key)
+            )
+            for key in [
+                "product_name",
+                "description",
+                "audience",
+                "goal_customers",
+                "mode",
+                "personal_goal",
+                "personal_target",
+                "personal_current",
+            ]
         },
         "sources": [
             {
@@ -323,7 +340,9 @@ def queue_workflow(
             if data.research_mode == "manual"
         ],
         "performance": performance_snapshot(db, project_id),
-        "customer_pipeline": funnel(db, project_id),
+        "customer_pipeline": None
+        if project.data.get("mode") == "personal"
+        else funnel(db, project_id),
         "social_accounts": social_context(db, project_id),
         "generation_mode": mode,
     }

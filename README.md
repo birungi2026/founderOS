@@ -103,3 +103,5 @@ For Windows Docker users: keep your existing `.env` password when updating. Comp
 Social account OAuth access for Instagram professional accounts and Facebook Pages is available through the project account panel. See [configuration, permissions and current limits](docs/SOCIAL_ACCOUNTS.md). Retrieved snapshots inform new agent workflows; publishing, messaging and unattended refresh are separate integrations.
 
 The [guided founder workspace](docs/WORKSPACE.md) opens on an actionable Overview, with separate setup, accounts, employee work, routine and customer sections. Manual tools and administration are under Advanced tools.
+
+Signup supports **Grow my business** and **Build my personal brand**, with mode-specific onboarding and goal tracking. See [personal-brand workspaces](docs/PERSONAL_BRAND.md).

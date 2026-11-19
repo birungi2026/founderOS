@@ -38,6 +38,10 @@ def test_upgrade_preserves_existing_campaign_drafts(tmp_path):
     )
     with sqlite3.connect(database) as db:
         db.execute(
+            "INSERT INTO users (id,email,password_hash) VALUES (?,?,?)",
+            ("existing-user", "existing@example.com", "existing-hash"),
+        )
+        db.execute(
             "INSERT INTO organizations (id,name) VALUES (?,?)", ("org", "Existing workspace")
         )
         db.execute(
@@ -64,3 +68,7 @@ def test_upgrade_preserves_existing_campaign_drafts(tmp_path):
 
         data = json.loads(db.execute("SELECT data FROM projects WHERE id='project'").fetchone()[0])
         assert data["goal_customers"] == 50
+        assert (
+            db.execute("SELECT onboarding_mode FROM users WHERE id='existing-user'").fetchone()[0]
+            == "business"
+        )

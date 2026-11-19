@@ -17,9 +17,11 @@ const steps = [
 export default function FounderInterview({
   canWrite,
   active,
+  personal = false,
 }: {
   canWrite: boolean;
   active: boolean;
+  personal?: boolean;
 }) {
   const [step, setStep] = useState(0),
     [question, setQuestion] = useState(0),
@@ -177,7 +179,11 @@ export default function FounderInterview({
       className="panel interview-studio"
       aria-label="Founder video interview"
     >
-      <span className="eyebrow">FOUNDER INTERVIEW · HEYGEN DEMO</span>
+      <span className="eyebrow">
+        {personal
+          ? "PERSONAL BRAND INTERVIEW · HEYGEN DEMO"
+          : "FOUNDER INTERVIEW · HEYGEN DEMO"}
+      </span>
       <h2>Your story. Your voice. Your digital twin.</h2>
       <p>
         Explore the complete onboarding flow before connecting HeyGen. Recording
@@ -210,7 +216,17 @@ export default function FounderInterview({
               <small>
                 Question {question + 1} of {prompts.length}
               </small>
-              <h3>{prompts[question]}</h3>
+              <h3>
+                {personal
+                  ? [
+                      "Introduce yourself and tell us the story behind your personal brand.",
+                      "What topics do you know well, and what do you want to be known for?",
+                      "Who do you want to reach, and what makes your perspective useful?",
+                      "Explain a topic you care about in your natural speaking style.",
+                      prompts[4],
+                    ][question]
+                  : prompts[question]}
+              </h3>
               <button
                 type="button"
                 className="secondary"
@@ -292,7 +308,9 @@ export default function FounderInterview({
                     setSample(true);
                     setUrl("");
                     setNotes(
-                      "EXAMPLE ONLY: I founded a company that helps small teams understand their customers. Our target customers are early-stage software teams.",
+                      personal
+                        ? "EXAMPLE ONLY: I share practical engineering lessons with early-career developers. I want to grow a useful newsletter and attract mentoring opportunities."
+                        : "EXAMPLE ONLY: I founded a company that helps small teams understand their customers. Our target customers are early-stage software teams.",
                     );
                     setTone(
                       "EXAMPLE ONLY: Conversational, practical and warm. The founder speaks in their own natural accent.",
@@ -347,7 +365,9 @@ export default function FounderInterview({
               These notes do not update your approved founder profile.
             </p>
             <label>
-              Founder and company interview notes
+              {personal
+                ? "Personal brand interview notes"
+                : "Founder and company interview notes"}
               <textarea
                 required
                 rows={5}

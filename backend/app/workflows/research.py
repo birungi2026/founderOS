@@ -73,7 +73,17 @@ def discover(ctx):
     queries.append(
         (f"{ctx['project']['description'][:150]} alternatives competitors {audience}", None)
     )
-    queries.append((f"{audience} {ctx['project']['description'][:150]} companies customers", None))
+    queries.append(
+        (
+            f"{audience} {ctx['project']['description'][:150]} "
+            + (
+                "creators audience interests opportunities"
+                if ctx["project"].get("mode") == "personal"
+                else "companies customers"
+            ),
+            None,
+        )
+    )
     results, seen = [], set()
     with httpx.Client(timeout=20, follow_redirects=False) as client:
         for query, freshness in queries:

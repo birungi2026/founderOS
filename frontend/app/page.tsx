@@ -5,19 +5,31 @@ import GrowthTeam from "./GrowthTeam";
 import DailyEmployee from "./DailyEmployee";
 import CompanyBrief from "./CompanyBrief";
 import FounderInterview from "./FounderInterview";
+import PersonalProgress from "./PersonalProgress";
 import SocialAccounts from "./SocialAccounts";
 import EmployeeOverview, {
   WorkspaceView,
   workspaceViews,
 } from "./EmployeeOverview";
 type Org = { id: string; name: string; role: string };
-type Identity = { email: string; organizations: Org[] };
+type Identity = {
+  email: string;
+  organizations: Org[];
+  onboarding_mode?: "business" | "personal";
+};
 type Strategy = {
   steps: string[];
   generation_mode: string;
   citations: { id: string; url: string; title: string }[];
 };
-type Project = { id: string; product_name: string; strategy?: Strategy };
+type Project = {
+  id: string;
+  product_name: string;
+  strategy?: Strategy;
+  mode?: string;
+  personal_goal?: string;
+  personal_target?: number;
+};
 type Draft = {
   id: string;
   channel: string;
@@ -61,6 +73,14 @@ export default function Home() {
     paying_customers: 0,
   });
   const [problem, setProblem] = useState("");
+  const [projectMode, setProjectMode] = useState("business"),
+    [personalGoal, setPersonalGoal] = useState("followers"),
+    [personalTarget, setPersonalTarget] = useState(1000);
+  const activeProject = projects.find((p) => p.id === projectId);
+  const personal = activeProject?.mode === "personal";
+  const goalText = personal
+    ? `Build a relevant audience and reach ${activeProject?.personal_target || 1000} ${(activeProject?.personal_goal || "followers").replaceAll("_", " ")}.`
+    : "Convert qualified leads and followers into our first 50 paying customers.";
   const [pipelineRefresh, setPipelineRefresh] = useState(0);
   const [view, setView] = useState<WorkspaceView>("overview");
   useEffect(() => {
@@ -80,6 +100,7 @@ export default function Home() {
     api("/auth/me")
       .then((me) => {
         setIdentity(me);
+        setProjectMode(me.onboarding_mode || "business");
         setOrgId(me.organizations[0]?.id || "");
       })
       .catch(() => {})
@@ -153,10 +174,13 @@ export default function Home() {
     await api(register ? "/auth/register" : "/auth/login", "", {
       email,
       password,
-      ...(register ? { organization_name: organizationName } : {}),
+      ...(register
+        ? { organization_name: organizationName, onboarding_mode: projectMode }
+        : {}),
     });
     const me = await api("/auth/me");
     setIdentity(me);
+    setProjectMode(me.onboarding_mode || "business");
     setOrgId(me.organizations[0]?.id || "");
     setPassword("");
   }
@@ -169,9 +193,12 @@ export default function Home() {
   }
   async function create() {
     const p = await api("/projects", orgId, {
+      mode: projectMode,
+      personal_goal: personalGoal,
+      personal_target: personalTarget,
       product_name: name,
       description,
-      problem,
+      problem: projectMode === "personal" ? "" : problem,
       audience,
       goal_customers: goal,
     });
@@ -263,7 +290,9 @@ export default function Home() {
       <p className="intro" hidden={!!identity && !!projectId}>
         {identity
           ? "Build your company. Give your employee direction, review its work and track paying customers."
-          : "Build your founder brand and work toward your first 50 paying customers."}
+          : projectMode === "personal"
+            ? "Build your personal brand, grow a relevant audience and attract opportunities."
+            : "Build your founder brand and work toward your first 50 paying customers."}
       </p>
       {error && (
         <p className="error" role="alert">
@@ -306,7 +335,22 @@ export default function Home() {
               </label>
               {register && (
                 <label>
-                  Organization name
+                  What do you want to grow?
+                  <select
+                    aria-label="Signup growth goal"
+                    value={projectMode}
+                    onChange={(e) => setProjectMode(e.target.value)}
+                  >
+                    <option value="business">Grow my business</option>
+                    <option value="personal">Build my personal brand</option>
+                  </select>
+                </label>
+              )}
+              {register && (
+                <label>
+                  {projectMode === "personal"
+                    ? "Workspace name"
+                    : "Organization name"}
                   <input
                     minLength={2}
                     maxLength={100}
@@ -337,7 +381,7 @@ export default function Home() {
         <fieldset disabled={busy}>
           <section className="workspace">
             <label>
-              Organization
+              {personal ? "Workspace" : "Organization"}
               <select
                 aria-label="Organization"
                 value={orgId}
@@ -369,12 +413,27 @@ export default function Home() {
             <details className="panel" open={!projectId}>
               <summary>
                 {projectId
-                  ? "Create another company workspace"
-                  : "Start here: tell us about your company"}
+                  ? "Create another growth workspace"
+                  : projectMode === "personal"
+                    ? "Start here: introduce your personal brand"
+                    : "Start here: tell us about your company"}
               </summary>
               <form onSubmit={(e) => submit(e, create)}>
                 <label>
-                  Product name
+                  Workspace purpose
+                  <select
+                    aria-label="Workspace purpose"
+                    value={projectMode}
+                    onChange={(e) => setProjectMode(e.target.value)}
+                  >
+                    <option value="business">Grow my business</option>
+                    <option value="personal">Build my personal brand</option>
+                  </select>
+                </label>
+                <label>
+                  {projectMode === "personal"
+                    ? "Your name or brand"
+                    : "Product name"}
                   <input
                     required
                     minLength={2}
@@ -383,19 +442,23 @@ export default function Home() {
                     onChange={(e) => setName(e.target.value)}
                   />
                 </label>
+                {projectMode !== "personal" && (
+                  <label>
+                    Company problem
+                    <textarea
+                      aria-label="Company problem"
+                      required
+                      minLength={10}
+                      maxLength={2000}
+                      value={problem}
+                      onChange={(e) => setProblem(e.target.value)}
+                    />
+                  </label>
+                )}
                 <label>
-                  Company problem
-                  <textarea
-                    aria-label="Company problem"
-                    required
-                    minLength={10}
-                    maxLength={2000}
-                    value={problem}
-                    onChange={(e) => setProblem(e.target.value)}
-                  />
-                </label>
-                <label>
-                  What does it do?
+                  {projectMode === "personal"
+                    ? "Your niche and expertise"
+                    : "What does it do?"}
                   <textarea
                     required
                     minLength={10}
@@ -406,7 +469,9 @@ export default function Home() {
                 </label>
                 <div className="grid">
                   <label>
-                    Who is it for?
+                    {projectMode === "personal"
+                      ? "Who do you want to reach?"
+                      : "Who is it for?"}
                     <input
                       required
                       minLength={3}
@@ -415,17 +480,51 @@ export default function Home() {
                       onChange={(e) => setAudience(e.target.value)}
                     />
                   </label>
-                  <label>
-                    Customer goal
-                    <input
-                      type="number"
-                      min={1}
-                      max={10000}
-                      required
-                      value={goal}
-                      onChange={(e) => setGoal(Number(e.target.value))}
-                    />
-                  </label>
+                  {projectMode === "personal" ? (
+                    <>
+                      <label>
+                        Your personal brand goal
+                        <select
+                          aria-label="Personal brand outcome"
+                          value={personalGoal}
+                          onChange={(e) => setPersonalGoal(e.target.value)}
+                        >
+                          <option value="followers">Relevant followers</option>
+                          <option value="newsletter_subscribers">
+                            Newsletter subscribers
+                          </option>
+                          <option value="inquiries">
+                            Qualified inquiries / opportunities
+                          </option>
+                        </select>
+                      </label>
+                      <label>
+                        Personal brand target
+                        <input
+                          type="number"
+                          min={1}
+                          max={10000000}
+                          required
+                          value={personalTarget}
+                          onChange={(e) =>
+                            setPersonalTarget(Number(e.target.value))
+                          }
+                        />
+                      </label>
+                    </>
+                  ) : (
+                    <label>
+                      Customer goal
+                      <input
+                        type="number"
+                        min={1}
+                        max={10000}
+                        required
+                        value={goal}
+                        onChange={(e) => setGoal(Number(e.target.value))}
+                      />
+                    </label>
+                  )}
                 </div>
                 <button>Create project</button>
               </form>
@@ -434,7 +533,7 @@ export default function Home() {
           {projectId && (
             <>
               <div className="section-title">
-                <span>YOUR COMPANY</span>
+                <span>{personal ? "YOUR PERSONAL BRAND" : "YOUR COMPANY"}</span>
                 <h2>
                   {projects.find((p) => p.id === projectId)?.product_name}
                 </h2>
@@ -447,7 +546,11 @@ export default function Home() {
                     aria-current={view === id ? "page" : undefined}
                     onClick={() => setView(id)}
                   >
-                    {label}
+                    {personal && id === "profile"
+                      ? "1. You & your brand"
+                      : personal && id === "customers"
+                        ? "Audience & opportunities"
+                        : label}
                   </button>
                 ))}
               </nav>
@@ -455,23 +558,29 @@ export default function Home() {
                 <h2>
                   {view === "overview"
                     ? "Your day at a glance"
-                    : workspaceViews
-                        .find(([id]) => id === view)?.[1]
-                        .replace(/^\d\. /, "")}
+                    : personal && view === "customers"
+                      ? "Audience & opportunities"
+                      : personal && view === "profile"
+                        ? "You & your brand"
+                        : workspaceViews
+                            .find(([id]) => id === view)?.[1]
+                            .replace(/^\d\. /, "")}
                 </h2>
                 <p>
                   {
                     {
                       overview:
                         "One next step, current activity and progress toward your goal.",
-                      profile:
-                        "Confirm your business context and teach your employee your story and voice.",
+                      profile: personal
+                        ? "Share your niche, audience, expertise and voice. A company or paid offer is optional."
+                        : "Confirm your business context and teach your employee your story and voice.",
                       accounts:
                         "Grant account access, or try the sample connection flow without API keys.",
                       content:
                         "Start an assignment, confirm the research and review the resulting drafts.",
-                      customers:
-                        "Track real buyer conversations and confirmed purchases.",
+                      customers: personal
+                        ? "Track audience growth, subscribers or qualified opportunities against your chosen goal."
+                        : "Track real buyer conversations and confirmed purchases.",
                       routine:
                         "Choose how often your employee prepares content. This does not enable automatic publishing.",
                       settings:
@@ -501,8 +610,9 @@ export default function Home() {
                     Next: connect social accounts →
                   </button>
                   <p>
-                    Save and approve your founder profile below before starting
-                    an assignment.
+                    Save and approve your{" "}
+                    {personal ? "personal brand" : "founder"} profile below
+                    before starting an assignment.
                   </p>
                 </div>
               )}
@@ -529,7 +639,10 @@ export default function Home() {
                 />
               </div>
               <div
-                hidden={view !== "customers" && view !== "routine"}
+                hidden={
+                  (view !== "customers" && view !== "routine") ||
+                  (personal && view === "customers")
+                }
                 data-employee-view={view}
               >
                 <DailyEmployee
@@ -540,15 +653,26 @@ export default function Home() {
                   isOwner={role === "owner"}
                   refreshKey={pipelineRefresh}
                   section={view}
+                  goalText={goalText}
                 />
               </div>
+              {personal && view === "customers" && (
+                <PersonalProgress
+                  key={orgId + projectId}
+                  orgId={orgId}
+                  projectId={projectId}
+                  canWrite={canWrite}
+                />
+              )}
               <div hidden={view !== "profile"}>
                 <FounderInterview
                   key={"interview" + orgId + projectId}
                   canWrite={canWrite}
                   active={view === "profile"}
+                  personal={personal}
                 />
                 <CompanyBrief
+                  personal={personal}
                   key={"company" + orgId + projectId}
                   orgId={orgId}
                   projectId={projectId}
@@ -565,6 +689,8 @@ export default function Home() {
                   projectId={projectId}
                   canWrite={canWrite}
                   sourceCount={sources.length}
+                  goalText={goalText}
+                  personal={personal}
                   isOwner={role === "owner"}
                   onComplete={async () => {
                     setDrafts(
