@@ -217,16 +217,16 @@ def main():
         page.get_by_label("Your founder story", exact=True).fill(
             "I started this company after helping small teams understand their customer conversion data."
         )
-        page.get_by_label("Your expertise (one per line)", exact=True).fill(
+        page.get_by_label("What do you know well?", exact=True).fill(
             "Customer research\nProduct analytics"
         )
-        page.get_by_label(
-            "Content pillars (one per line, up to five)", exact=True
-        ).fill("Founder lessons\nPractical growth")
-        page.get_by_label("How should your content sound?", exact=True).fill(
+        page.get_by_label("What topics should Rymu post about?", exact=True).fill(
+            "Founder lessons\nPractical growth"
+        )
+        page.get_by_label("How should Rymu write your posts?", exact=True).fill(
             "Direct, practical and warm"
         )
-        page.get_by_label("Your positioning", exact=True).fill(
+        page.get_by_label("Who do you help, and how?", exact=True).fill(
             "We help small software teams learn which growth messages lead to useful conversations."
         )
         page.get_by_role("button", name="Save brand version", exact=True).click()
@@ -531,16 +531,16 @@ def main():
         page.get_by_label("Your story", exact=True).fill(
             "I mentor junior software engineers and share practical lessons from building real software."
         )
-        page.get_by_label("Your expertise (one per line)", exact=True).fill(
+        page.get_by_label("What do you know well?", exact=True).fill(
             "Software engineering"
         )
-        page.get_by_label(
-            "Content pillars (one per line, up to five)", exact=True
-        ).fill("Practical engineering")
-        page.get_by_label("How should your content sound?", exact=True).fill(
+        page.get_by_label("What topics should Rymu post about?", exact=True).fill(
+            "Practical engineering"
+        )
+        page.get_by_label("How should Rymu write your posts?", exact=True).fill(
             "Practical and encouraging"
         )
-        page.get_by_label("Your positioning", exact=True).fill(
+        page.get_by_label("Who do you help, and how?", exact=True).fill(
             "I help junior engineers learn through practical examples and mentoring."
         )
         page.get_by_role("button", name="Save brand version", exact=True).click()
