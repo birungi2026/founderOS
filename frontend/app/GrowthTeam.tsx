@@ -247,6 +247,7 @@ export default function GrowthTeam({
   onComplete,
   goalText,
   personal = false,
+  contentIntent,
 }: {
   orgId: string;
   projectId: string;
@@ -254,6 +255,12 @@ export default function GrowthTeam({
   sourceCount: number;
   goalText?: string;
   personal?: boolean;
+  contentIntent?: {
+    tab: string;
+    request: number;
+    runId?: string;
+    projectId?: string;
+  };
   isOwner: boolean;
   onComplete: () => Promise<void>;
 }) {
@@ -279,6 +286,21 @@ export default function GrowthTeam({
   const [tab, setTab] = useState("growth"),
     [usage, setUsage] = useState({ workflow_runs: 0, limit: 40 }),
     [generationMode, setGenerationMode] = useState("");
+  useEffect(() => {
+    if (contentIntent?.request && contentIntent.projectId === projectId) {
+      if (contentIntent.runId) {
+        void loadRun(contentIntent.runId)
+          .then(() => setTab(contentIntent.tab))
+          .catch((e) =>
+            setError(
+              e instanceof Error ? e.message : "Unable to open saved content",
+            ),
+          );
+      } else setTab(contentIntent.tab);
+      const section = document.getElementById("employee-assignment");
+      section?.scrollIntoView({ behavior: "auto", block: "start" });
+    }
+  }, [contentIntent]);
   const completed = useRef(onComplete);
   completed.current = onComplete;
   const [historyVersion, setHistoryVersion] = useState("");
@@ -729,7 +751,7 @@ export default function GrowthTeam({
           </details>
         )}
       </section>
-      <section className="panel command-center">
+      <section className="panel command-center" id="employee-assignment">
         <span className="eyebrow">EMPLOYEE WORK</span>
         <h2>Research first. Content after your confirmation.</h2>
         <p>

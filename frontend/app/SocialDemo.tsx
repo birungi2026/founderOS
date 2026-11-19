@@ -57,7 +57,7 @@ export default function SocialDemo() {
               <h3>Simulated {label(pending)} authorization</h3>
               <p>
                 In the live flow, the platform opens its own login and
-                permission screen. This is a FounderOS preview, not a Meta login
+                permission screen. This is a Rymu preview, not a Meta login
                 page.
               </p>
               <p>

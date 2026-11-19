@@ -29,3 +29,7 @@ Publishing has durable claims. A worker crash can leave a job `sending`; a lost 
 Registration is open and emails are not verified. Add controlled signup, email verification, password recovery, and MFA/SSO before wider commercial rollout. Self-service OAuth onboarding and refresh are follow-up work; the included adapter uses an operator-provisioned scoped token. Validate the supported LinkedIn API version and app permissions before enabling delivery.
 
 The unit/integration suite uses provider mocks. A passing suite does not establish live provider access, research truth, or guaranteed customer acquisition. No production deployment or real publishing is performed by the implementation task.
+
+## Rymu domain
+
+For the intended production domain `rymu.ai`, a same-site API deployment can use `https://api.rymu.ai`: build with `NEXT_PUBLIC_API_URL=https://api.rymu.ai`, set `FRONTEND_ORIGINS=https://rymu.ai` (include `https://www.rymu.ai` only if it also serves the frontend), and set `COOKIE_SECURE=true`. Point the corresponding Namecheap DNS records at the DigitalOcean deployment and provision HTTPS for both hostnames before testing OAuth. Register callback URLs matching the existing backend routes. This documentation and app metadata do not create DNS records or certificates. Existing local Compose names and secrets remain unchanged.

@@ -1,8 +1,12 @@
 import "./style.css";
 import "./professional.css";
+import "./rymu.css";
 export const metadata = {
-  title: "FounderOS",
-  description: "The AI Growth Employee for Founders",
+  title: "Rymu",
+  description:
+    "Your AI growth employee. Build your brand and reach your next customer.",
+  metadataBase: new URL("https://rymu.ai"),
+  icons: { icon: "/rymu-mark.png", apple: "/rymu-mark.png" },
 };
 export default function RootLayout({
   children,

@@ -66,8 +66,11 @@ def main():
                 "1. You & your brand": "Your brand",
                 "2. Social accounts": "Social accounts",
                 "3. Research & content": "Content studio",
-                "4. Working routine": "Working routine",
-                "Advanced tools": "Workspace settings",
+                "Overview": "Home",
+                "Customers": "Results",
+                "Audience & opportunities": "Results",
+                "4. Working routine": "Content plan",
+                "Advanced tools": "Settings",
             }
             nav.get_by_role("button", name=labels.get(name, name), exact=True).click()
 
@@ -397,18 +400,71 @@ def main():
         )
         section("Overview")
         expect(
-            page.get_by_role("heading", name="Your day at a glance", exact=True)
+            page.get_by_role(
+                "heading",
+                name="A bigger audience starts with your next good idea.",
+                exact=True,
+            )
         ).to_be_visible()
         expect(
             page.get_by_label("Customer milestone progress", exact=True)
         ).to_have_attribute("value", "1")
         page.screenshot(path="/tmp/founderos-overview.png", full_page=True)
         page.screenshot(path="/tmp/founderos-desktop-preview.png")
+        recent = page.locator(".recent-draft").first
+        campaign = recent.get_attribute("data-campaign")
+        draft_text = recent.locator("p").inner_text()
+        recent.click()
+        if campaign:
+            expect(page.get_by_label("Campaign history")).to_have_value(campaign)
+        expect(page.locator(".copy").filter(has_text=draft_text).first).to_be_visible()
+        expect(
+            page.get_by_role("button", name="Content calendar", exact=True)
+        ).to_have_attribute("aria-pressed", "true")
+        section("Overview")
         page.set_viewport_size({"width": 390, "height": 844})
         assert page.evaluate(
             "document.documentElement.scrollWidth <= window.innerWidth"
         ), "Overview overflows on mobile"
         page.screenshot(path="/tmp/founderos-overview-mobile.png", full_page=True)
+        phone_nav = page.get_by_role("navigation", name="Phone navigation")
+        expect(phone_nav).to_be_visible()
+        phone_nav.get_by_role("button", name="Create", exact=True).click()
+        expect(page.locator(".command-center")).to_be_visible()
+        phone_nav.get_by_role("button", name="Home", exact=True).click()
+        page.get_by_role("button", name="VIDEO SCRIPT", exact=False).click()
+        expect(
+            page.get_by_role("button", name="Video studio", exact=True)
+        ).to_have_attribute("aria-pressed", "true")
+        expect(
+            page.get_by_role("button", name="Copy video script", exact=True)
+        ).to_be_visible()
+        phone_nav.get_by_role("button", name="More navigation").click()
+        expect(
+            nav.get_by_role("button", name="Social accounts", exact=True)
+        ).to_be_visible()
+        nav.get_by_role("button", name="Social accounts", exact=True).click()
+        expect(
+            page.get_by_role("button", name="Connect instagram", exact=True)
+        ).to_be_visible()
+        phone_nav.get_by_role("button", name="Home", exact=True).click()
+        for width in [320, 768]:
+            page.set_viewport_size({"width": width, "height": 844})
+            for name in [
+                "1. Company & founder",
+                "2. Social accounts",
+                "3. Research & content",
+                "4. Working routine",
+                "Customers",
+                "Advanced tools",
+                "Overview",
+            ]:
+                section(name)
+                assert page.evaluate(
+                    "document.documentElement.scrollWidth <= window.innerWidth"
+                ), f"{name} overflows at {width}px"
+        page.set_viewport_size({"width": 390, "height": 844})
+
         page.get_by_role("button", name="Sign out", exact=True).click()
         page.get_by_role("button", name="Create an account", exact=True).click()
         page.get_by_role("radio", name="My personal brand", exact=True).check()

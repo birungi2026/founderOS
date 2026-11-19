@@ -167,7 +167,7 @@ export default function SocialAccounts({
       ))}
       <p>
         Owners control access. Disconnect removes the stored token and current
-        account snapshot. You can also revoke FounderOS in your social account
+        account snapshot. You can also revoke Rymu in your social account
         settings. Previously created workflow snapshots remain in campaign
         history.
       </p>
