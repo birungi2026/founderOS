@@ -311,6 +311,18 @@ def main():
         ).to_be_visible()
         # Automatic research + approval checkpoint + configurable routine.
         section("4. Working routine")
+        page.get_by_label(
+            "When should Rymu start preparing content?", exact=True
+        ).select_option("18")
+        expect(
+            page.get_by_label(
+                "When should Rymu start preparing content?", exact=True
+            ).locator("option:checked")
+        ).to_have_text("6:00 PM")
+        # Keep the enabled recurring fixture due regardless of the CI clock.
+        page.get_by_label(
+            "When should Rymu start preparing content?", exact=True
+        ).select_option("0")
         page.get_by_label("Content frequency", exact=True).select_option("daily")
         page.get_by_label("Posts per selected day", exact=True).fill("3")
         page.get_by_label(
@@ -369,6 +381,9 @@ def main():
         ).uncheck()
         page.get_by_label("Content frequency", exact=True).select_option("monthly")
         page.get_by_label("Preparation day of month", exact=True).fill("5")
+        page.get_by_label(
+            "When should Rymu start preparing content?", exact=True
+        ).select_option("18")
         page.get_by_role("button", name="Save content routine", exact=True).click()
         expect(
             page.get_by_text(
@@ -381,6 +396,9 @@ def main():
         expect(page.get_by_label("Content frequency", exact=True)).to_have_value(
             "monthly"
         )
+        expect(
+            page.get_by_label("When should Rymu start preparing content?", exact=True)
+        ).to_have_value("18")
         expect(page.get_by_label("Posts per selected day", exact=True)).to_have_value(
             "3"
         )

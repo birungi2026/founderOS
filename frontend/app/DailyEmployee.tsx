@@ -387,23 +387,36 @@ export default function DailyEmployee({
             </label>
             <div className="grid">
               <label>
-                Preparation hour
-                <input
-                  type="number"
-                  min={0}
-                  max={23}
+                When should Rymu start preparing content?
+                <select
+                  aria-label="When should Rymu start preparing content?"
+                  aria-describedby="preparation-time-help"
                   value={hour}
                   required
                   onChange={(e) => setHour(Number(e.target.value))}
-                />
+                >
+                  {Array.from({ length: 24 }, (_, value) => (
+                    <option key={value} value={value}>
+                      {value % 12 || 12}:00 {value < 12 ? "AM" : "PM"}
+                    </option>
+                  ))}
+                </select>
+                <small id="preparation-time-help">
+                  Rymu starts researching and writing drafts at this time. This
+                  is not a posting time.
+                </small>
               </label>
               <label>
-                Your timezone
+                Timezone for this schedule
                 <input
                   required
+                  aria-describedby="schedule-timezone-help"
                   value={zone}
                   onChange={(e) => setZone(e.target.value)}
                 />
+                <small id="schedule-timezone-help">
+                  The start time follows this timezone, even when you travel.
+                </small>
               </label>
             </div>
             {!available && (
