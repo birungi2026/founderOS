@@ -11,7 +11,7 @@ router = APIRouter(prefix="/v1", tags=["Company understanding"])
 
 
 class CompanyInput(StrictModel):
-    problem: str = Field(min_length=10, max_length=2000)
+    problem: str = Field(default="", max_length=2000)
     solution: str = Field(min_length=10, max_length=2000)
     target_customers: str = Field(min_length=3, max_length=500)
     differentiator: str = Field(default="", max_length=1500)
@@ -46,6 +46,8 @@ def save_company(
     db: Session = Depends(get_db),
 ):
     project = project_for(db, project_id, context)
+    if project.data.get("mode", "business") != "personal" and len(data.problem.strip()) < 10:
+        raise HTTPException(422, "Describe the company problem in at least 10 characters")
     previous = company_snapshot(project)
     if data.expected_version != previous.get("version", 0):
         raise HTTPException(409, "Company profile changed; reload before editing")

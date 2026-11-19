@@ -13,10 +13,12 @@ export default function CompanyBrief({
   orgId,
   projectId,
   canWrite,
+  personal = false,
 }: {
   orgId: string;
   projectId: string;
   canWrite: boolean;
+  personal?: boolean;
 }) {
   const [profile, setProfile] = useState<Company | null>(null),
     [error, setError] = useState(""),
@@ -60,7 +62,9 @@ export default function CompanyBrief({
   return (
     <details className="panel" open={profile ? !profile.problem : false}>
       <summary>
-        Company brief: problem, solution, audience and competitors
+        {personal
+          ? "Personal brand brief: niche, audience and peers"
+          : "Company brief: problem, solution, audience and competitors"}
       </summary>
       <p>
         Give the employee the basics. Differentiation starts as your hypothesis;
@@ -80,12 +84,18 @@ export default function CompanyBrief({
         <form onSubmit={save}>
           <fieldset disabled={busy || !canWrite}>
             <label>
-              Problem your company solves
+              {personal
+                ? "Audience challenge (optional)"
+                : "Problem your company solves"}
               <textarea
-                aria-label="Problem your company solves"
-                minLength={10}
+                aria-label={
+                  personal
+                    ? "Audience challenge (optional)"
+                    : "Problem your company solves"
+                }
+                minLength={personal ? 0 : 10}
                 maxLength={2000}
-                required
+                required={!personal}
                 value={profile.problem}
                 onChange={(e) =>
                   setProfile({ ...profile, problem: e.target.value })
@@ -93,9 +103,11 @@ export default function CompanyBrief({
               />
             </label>
             <label>
-              Your solution
+              {personal ? "Your niche and expertise" : "Your solution"}
               <textarea
-                aria-label="Your solution"
+                aria-label={
+                  personal ? "Your niche and expertise" : "Your solution"
+                }
                 minLength={10}
                 maxLength={2000}
                 required
@@ -106,7 +118,7 @@ export default function CompanyBrief({
               />
             </label>
             <label>
-              Target customers
+              {personal ? "Target audience" : "Target customers"}
               <input
                 minLength={3}
                 maxLength={500}
@@ -118,9 +130,15 @@ export default function CompanyBrief({
               />
             </label>
             <label>
-              Why customers might choose you
+              {personal
+                ? "What makes your perspective distinctive"
+                : "Why customers might choose you"}
               <textarea
-                aria-label="Why customers might choose you"
+                aria-label={
+                  personal
+                    ? "What makes your perspective distinctive"
+                    : "Why customers might choose you"
+                }
                 maxLength={1500}
                 value={profile.differentiator}
                 onChange={(e) =>

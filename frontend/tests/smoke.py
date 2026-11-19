@@ -366,6 +366,92 @@ def main():
             "document.documentElement.scrollWidth <= window.innerWidth"
         ), "Overview overflows on mobile"
         page.screenshot(path="/tmp/founderos-overview-mobile.png", full_page=True)
+        page.get_by_role("button", name="Sign out", exact=True).click()
+        page.get_by_role("button", name="Create an account", exact=True).click()
+        page.get_by_label("Signup growth goal", exact=True).select_option("personal")
+        creator_email = f"creator-{uuid4().hex[:12]}@example.com"
+        page.get_by_label("Email", exact=True).fill(creator_email)
+        page.get_by_label("Password", exact=True).fill("browser-fixture-password")
+        page.get_by_label("Workspace name", exact=True).fill("Ada personal brand")
+        page.get_by_role("button", name="Create account", exact=True).click()
+        expect(page.get_by_label("Workspace purpose", exact=True)).to_have_value(
+            "personal"
+        )
+        expect(page.get_by_label("Company problem", exact=True)).not_to_be_visible()
+        page.get_by_label("Your name or brand", exact=True).fill("Ada Teaches")
+        page.get_by_label("Your niche and expertise", exact=True).fill(
+            "Practical software engineering and mentoring lessons."
+        )
+        page.get_by_label("Who do you want to reach?", exact=True).fill(
+            "Junior software engineers"
+        )
+        page.get_by_label("Personal brand outcome", exact=True).select_option(
+            "newsletter_subscribers"
+        )
+        page.get_by_label("Personal brand target", exact=True).fill("500")
+        page.get_by_role("button", name="Create project", exact=True).click()
+        expect(
+            page.get_by_role(
+                "button", name="Complete your personal profile", exact=True
+            )
+        ).to_be_visible()
+        expect(page.get_by_text("PAYING CUSTOMERS", exact=True)).not_to_be_visible()
+        section("Audience & opportunities")
+        page.get_by_label("Current total (self-reported)", exact=True).fill("75")
+        page.get_by_role(
+            "button", name="Save personal brand progress", exact=True
+        ).click()
+        expect(page.get_by_text("Progress saved.", exact=False)).to_be_visible()
+        section("Overview")
+        expect(
+            page.get_by_label("Personal brand milestone progress", exact=True)
+        ).to_have_attribute("value", "75")
+        page.reload()
+        expect(
+            page.get_by_label("Personal brand milestone progress", exact=True)
+        ).to_have_attribute("value", "75")
+        section("1. You & your brand")
+        page.get_by_label("Your name", exact=True).fill("Ada Expert")
+        page.get_by_label("Your story", exact=True).fill(
+            "I mentor junior software engineers and share practical lessons from building real software."
+        )
+        page.get_by_label("Your expertise (one per line)", exact=True).fill(
+            "Software engineering"
+        )
+        page.get_by_label(
+            "Content pillars (one per line, up to five)", exact=True
+        ).fill("Practical engineering")
+        page.get_by_label("How should your content sound?", exact=True).fill(
+            "Practical and encouraging"
+        )
+        page.get_by_label("Your positioning", exact=True).fill(
+            "I help junior engineers learn through practical examples and mentoring."
+        )
+        page.get_by_role("button", name="Save brand version", exact=True).click()
+        page.get_by_role("button", name="Approve brand version 1", exact=True).click()
+        section("3. Research & content")
+        expect(
+            page.get_by_label("What should the team achieve?", exact=True)
+        ).to_have_value(
+            "Build a relevant audience and reach 500 newsletter subscribers."
+        )
+        page.get_by_role("button", name="Start growth workflow", exact=True).click()
+        expect(
+            page.get_by_role(
+                "button", name="Confirm research and create content", exact=True
+            )
+        ).to_be_visible(timeout=45000)
+        page.get_by_role(
+            "button", name="Confirm research and create content", exact=True
+        ).click()
+        expect(page.get_by_text("Ready for your review", exact=True)).to_be_visible(
+            timeout=45000
+        )
+        page.get_by_role("button", name="Content calendar", exact=True).click()
+        expect(
+            page.get_by_role("button", name="Save new revision", exact=True)
+        ).to_have_count(1)
+        page.screenshot(path="/tmp/founderos-personal-brand.png", full_page=True)
         assert not errors, errors
         browser.close()
         print(

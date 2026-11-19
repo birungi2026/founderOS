@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { goalLabels } from "./PersonalProgress";
 export type WorkspaceView =
   | "overview"
   | "profile"
@@ -19,6 +20,8 @@ export const workspaceViews: [WorkspaceView, string][] = [
   ["settings", "Advanced tools"],
 ];
 type Summary = {
+  personal: boolean;
+  metric: string;
   company: boolean;
   brand: boolean;
   accounts: number;
@@ -52,21 +55,33 @@ export default function EmployeeOverview({
       if (inFlight) return;
       inFlight = true;
       try {
-        const [company, brand, social, runs, daily, customers, drafts, agents] =
-          await Promise.all([
-            api(`/v1/projects/${projectId}/company`, orgId),
-            api(`/v1/projects/${projectId}/brand`, orgId),
-            api(`/v1/projects/${projectId}/social`, orgId),
-            api(`/v1/projects/${projectId}/workflows`, orgId),
-            api(`/v1/projects/${projectId}/daily`, orgId),
-            api(`/v1/projects/${projectId}/customers`, orgId),
-            api(`/projects/${projectId}/drafts`, orgId),
-            api("/v1/agents", orgId),
-          ]);
+        const [
+          company,
+          brand,
+          social,
+          runs,
+          daily,
+          customers,
+          drafts,
+          agents,
+          project,
+        ] = await Promise.all([
+          api(`/v1/projects/${projectId}/company`, orgId),
+          api(`/v1/projects/${projectId}/brand`, orgId),
+          api(`/v1/projects/${projectId}/social`, orgId),
+          api(`/v1/projects/${projectId}/workflows`, orgId),
+          api(`/v1/projects/${projectId}/daily`, orgId),
+          api(`/v1/projects/${projectId}/customers`, orgId),
+          api(`/projects/${projectId}/drafts`, orgId),
+          api("/v1/agents", orgId),
+          api(`/projects/${projectId}`, orgId),
+        ]);
         if (active) {
           setError("");
           setData({
-            company: !!company.problem,
+            personal: project.mode === "personal",
+            metric: goalLabels[project.personal_goal] || "Audience progress",
+            company: project.mode === "personal" || !!company.problem,
             brand: brand.latest?.status === "approved",
             accounts: social.accounts.filter(
               (a: { status: string }) => a.status === "connected",
@@ -74,8 +89,14 @@ export default function EmployeeOverview({
             runStatus: runs.runs[0]?.status || "",
             runGoal: runs.runs[0]?.goal || "",
             routine: !!daily.schedule?.enabled,
-            paid: customers.funnel.paying_customers,
-            target: customers.funnel.target_customers,
+            paid:
+              project.mode === "personal"
+                ? project.personal_current || 0
+                : customers.funnel.paying_customers,
+            target:
+              project.mode === "personal"
+                ? project.personal_target
+                : customers.funnel.target_customers,
             leads: customers.leads.filter(
               (l: { stage: string }) => !["won", "lost"].includes(l.stage),
             ).length,
@@ -124,9 +145,15 @@ export default function EmployeeOverview({
     !data.company || !data.brand
       ? {
           view: "profile" as const,
-          title: "Introduce your company and yourself",
-          text: "Confirm the problem, solution and target customers, then save and approve your founder profile.",
-          button: "Complete company & founder",
+          title: data.personal
+            ? "Introduce yourself and your personal brand"
+            : "Introduce your company and yourself",
+          text: data.personal
+            ? "Share your niche, target audience, story and expertise, then approve your profile."
+            : "Confirm the problem, solution and target customers, then save and approve your founder profile.",
+          button: data.personal
+            ? "Complete your personal profile"
+            : "Complete company & founder",
         }
       : reviewResearch
         ? {
@@ -164,10 +191,12 @@ export default function EmployeeOverview({
                 };
   const steps = [
     {
-      title: "Company & founder",
+      title: data.personal ? "You & your brand" : "Company & founder",
       done: data.company && data.brand,
       view: "profile" as const,
-      description: "Problem, audience, story and approved voice",
+      description: data.personal
+        ? "Niche, audience, expertise and approved voice"
+        : "Problem, audience, story and approved voice",
     },
     {
       title: "Social accounts",
@@ -202,7 +231,9 @@ export default function EmployeeOverview({
           </button>
         </section>
         <section className="panel goal-summary">
-          <span className="eyebrow">PAYING CUSTOMERS</span>
+          <span className="eyebrow">
+            {data.personal ? data.metric : "PAYING CUSTOMERS"}
+          </span>
           <h2>
             {data.paid}
             <span> / {data.target}</span>
@@ -210,14 +241,26 @@ export default function EmployeeOverview({
           <progress
             value={Math.min(data.paid, data.target)}
             max={data.target}
-            aria-label="Customer milestone progress"
+            aria-label={
+              data.personal
+                ? "Personal brand milestone progress"
+                : "Customer milestone progress"
+            }
           />
-          <p>{data.leads} potential customers in your pipeline</p>
+          <p>
+            {data.personal
+              ? "Build a relevant audience and meaningful opportunities."
+              : `${data.leads} potential customers in your pipeline`}
+          </p>
           <small>
-            Founder-confirmed purchases. Followers don’t count as sales.
+            {data.personal
+              ? "Self-reported total. Automatic goal verification is not connected."
+              : "Founder-confirmed purchases. Followers don’t count as sales."}
           </small>
           <button className="secondary" onClick={() => navigate("customers")}>
-            View customer pipeline
+            {data.personal
+              ? "View audience & opportunities"
+              : "View customer pipeline"}
           </button>
         </section>
       </div>

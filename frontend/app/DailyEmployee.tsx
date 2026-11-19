@@ -134,6 +134,7 @@ export default function DailyEmployee({
   isOwner,
   refreshKey,
   section,
+  goalText,
 }: {
   orgId: string;
   projectId: string;
@@ -141,12 +142,13 @@ export default function DailyEmployee({
   isOwner: boolean;
   refreshKey: number;
   section?: string;
+  goalText?: string;
 }) {
   const [leads, setLeads] = useState<Lead[]>([]),
     [funnel, setFunnel] = useState<Funnel | null>(null),
     [schedule, setSchedule] = useState<Schedule | null>(null),
     [available, setAvailable] = useState(false);
-  const [goal, setGoal] = useState(defaultGoal),
+  const [goal, setGoal] = useState(goalText || defaultGoal),
     [enabled, setEnabled] = useState(false),
     [hour, setHour] = useState(9),
     [zone, setZone] = useState("UTC");

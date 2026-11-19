@@ -232,11 +232,15 @@ export default function GrowthTeam({
   sourceCount,
   isOwner,
   onComplete,
+  goalText,
+  personal = false,
 }: {
   orgId: string;
   projectId: string;
   canWrite: boolean;
   sourceCount: number;
+  goalText?: string;
+  personal?: boolean;
   isOwner: boolean;
   onComplete: () => Promise<void>;
 }) {
@@ -247,7 +251,8 @@ export default function GrowthTeam({
     [run, setRun] = useState<Run | null>(null),
     [drafts, setDrafts] = useState<CalendarDraft[]>([]);
   const [goal, setGoal] = useState(
-      "Convert qualified leads and followers into our first 50 paying customers.",
+      goalText ||
+        "Convert qualified leads and followers into our first 50 paying customers.",
     ),
     [weekStart, setWeekStart] = useState(dateAfter(0)),
     [launchDate, setLaunchDate] = useState(dateAfter(14));
@@ -482,7 +487,11 @@ export default function GrowthTeam({
     <div className="growth-team">
       <section className="panel brand-studio">
         <span className="eyebrow">PERSONAL BRAND STUDIO</span>
-        <h2>Teach your growth team who you are.</h2>
+        <h2>
+          {personal
+            ? "Teach your employee your story and voice."
+            : "Teach your growth team who you are."}
+        </h2>
         <p>
           Your story, expertise and voice become shared context for every agent.
           Website links are saved as references; no website import is performed.
@@ -511,7 +520,7 @@ export default function GrowthTeam({
           <fieldset disabled={busy || !canWrite}>
             <div className="grid">
               <label>
-                Founder name
+                {personal ? "Your name" : "Founder name"}
                 <input
                   required
                   minLength={2}
@@ -523,7 +532,9 @@ export default function GrowthTeam({
                 />
               </label>
               <label>
-                Product website (optional)
+                {personal
+                  ? "Your website (optional)"
+                  : "Product website (optional)"}
                 <input
                   type="url"
                   value={form.website_url || ""}
@@ -534,13 +545,13 @@ export default function GrowthTeam({
               </label>
             </div>
             <label>
-              Your founder story
+              {personal ? "Your story" : "Your founder story"}
               <textarea
                 required
                 minLength={20}
                 maxLength={4000}
                 placeholder="Why did you start? What have you personally learned?"
-                aria-label="Your founder story"
+                aria-label={personal ? "Your story" : "Your founder story"}
                 value={form.story}
                 onChange={(e) => setForm({ ...form, story: e.target.value })}
               />
@@ -781,6 +792,7 @@ export default function GrowthTeam({
               <label>
                 What should the team achieve?
                 <textarea
+                  aria-label="What should the team achieve?"
                   required
                   minLength={10}
                   maxLength={1000}
@@ -798,7 +810,7 @@ export default function GrowthTeam({
                     onChange={(e) => setWeekStart(e.target.value)}
                   />
                 </label>
-                <label>
+                <label hidden={personal}>
                   Target launch date
                   <input
                     type="date"
@@ -970,17 +982,19 @@ export default function GrowthTeam({
                 ["research", "Research radar"],
                 ["video", "Video studio"],
                 ["launch", "Launch center"],
-              ].map(([id, label]) => (
-                <button
-                  type="button"
-                  key={id}
-                  aria-pressed={tab === id}
-                  className={tab === id ? "" : "secondary"}
-                  onClick={() => setTab(id)}
-                >
-                  {label}
-                </button>
-              ))}
+              ]
+                .filter(([id]) => !personal || id !== "launch")
+                .map(([id, label]) => (
+                  <button
+                    type="button"
+                    key={id}
+                    aria-pressed={tab === id}
+                    className={tab === id ? "" : "secondary"}
+                    onClick={() => setTab(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
             </nav>
             {tab === "research" &&
               (research ? (
@@ -1094,7 +1108,7 @@ export default function GrowthTeam({
                   <h3>{growth.objective}</h3>
                   <p>{growth.experiment}</p>
                   <small>{growth.success_metric}</small>
-                  {run.performance_baseline && (
+                  {run.performance_baseline && !personal && (
                     <p>
                       Baseline: {run.performance_baseline.totals.leads} leads ·{" "}
                       {run.performance_baseline.totals.signups} signups ·{" "}
