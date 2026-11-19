@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { goalLabels } from "./PersonalProgress";
+import Icon from "./Icon";
 export type WorkspaceView =
   | "overview"
   | "profile"
@@ -219,26 +220,134 @@ export default function EmployeeOverview({
       description: "Choose content frequency and draft count",
     },
   ];
+  const percentage = Math.min(100, Math.round((data.paid / data.target) * 100));
+  const statusText = working
+    ? "In progress"
+    : reviewResearch
+      ? "Needs confirmation"
+      : data.runStatus === "failed"
+        ? "Needs attention"
+        : data.runStatus === "needs_review"
+          ? "Ready for review"
+          : data.runStatus === "research_ready"
+            ? "Report ready"
+            : "Ready for an assignment";
   return (
     <div className="employee-overview">
+      <div className="metric-strip">
+        {[
+          {
+            icon: "content",
+            label: "Drafts to review",
+            value: String(data.reviews),
+            detail: data.reviews
+              ? "Your approval is needed"
+              : "Nothing waiting for review",
+            view: "content" as const,
+          },
+          {
+            icon: "accounts",
+            label: "Connected accounts",
+            value: String(data.accounts),
+            detail: "Authorized social connections",
+            view: "accounts" as const,
+          },
+          {
+            icon: "routine",
+            label: "Content routine",
+            value: data.routine ? "Active" : "Not set",
+            detail: data.routine
+              ? "Preparation is scheduled"
+              : "Set your working rhythm",
+            view: "routine" as const,
+          },
+          {
+            icon: "profile",
+            label: "Brand profile",
+            value: data.brand ? "Approved" : "Needs setup",
+            detail: data.brand
+              ? "Your employee has context"
+              : "Introduce yourself and your brand",
+            view: "profile" as const,
+          },
+        ].map((item) => (
+          <button
+            className="metric-tile"
+            key={item.label}
+            onClick={() => navigate(item.view)}
+          >
+            <span className="metric-label">
+              <Icon name={item.icon} size={17} />
+              {item.label}
+            </span>
+            <strong>{item.value}</strong>
+            <span className="metric-detail">
+              {item.detail}
+              <Icon name="arrow" size={15} />
+            </span>
+          </button>
+        ))}
+      </div>
       <div className="overview-grid">
         <section className="panel next-action">
-          <span className="eyebrow">YOUR NEXT STEP</span>
+          <div className="next-action-art" aria-hidden="true">
+            <svg viewBox="0 0 180 180" fill="none">
+              <circle cx="90" cy="90" r="72" />
+              <circle cx="90" cy="90" r="48" />
+              <path d="M18 90h144M90 18v144M40 140 140 40" />
+              <circle cx="140" cy="40" r="6" />
+            </svg>
+          </div>
+          <span className="eyebrow">
+            <span className="eyebrow-dot" /> YOUR NEXT MOVE
+          </span>
           <h2>{next.title}</h2>
           <p>{next.text}</p>
           <button onClick={() => navigate(next.view)}>
-            {next.button} <span aria-hidden="true">→</span>
+            {next.button}
+            <Icon name="arrow" size={18} />
           </button>
+          <div className="next-action-foot">
+            <Icon name="shield" size={14} /> Your employee prepares. You make
+            the final call.
+          </div>
         </section>
         <section className="panel goal-summary">
-          <span className="eyebrow">
-            {data.personal ? data.metric : "PAYING CUSTOMERS"}
-          </span>
-          <h2>
-            {data.paid}
-            <span> / {data.target}</span>
-          </h2>
+          <div className="panel-heading">
+            <span className="eyebrow">YOUR NORTH STAR</span>
+            <Icon name="target" size={18} />
+          </div>
+          <h3>{data.personal ? data.metric : "First paying customers"}</h3>
+          <div className="goal-visual">
+            <div className="goal-ring" aria-hidden="true">
+              <svg viewBox="0 0 100 100">
+                <circle className="goal-track" cx="50" cy="50" r="42" />
+                <circle
+                  className="goal-fill"
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  strokeDasharray="263.9"
+                  strokeDashoffset={263.9 * (1 - percentage / 100)}
+                />
+              </svg>
+              <span>
+                {percentage}
+                <small>%</small>
+              </span>
+            </div>
+            <div>
+              <strong className="goal-value">
+                {data.paid}
+                <span> / {data.target}</span>
+              </strong>
+              <p>
+                {data.personal ? data.metric.toLowerCase() : "paying customers"}
+              </p>
+            </div>
+          </div>
           <progress
+            className="accessible-progress"
             value={Math.min(data.paid, data.target)}
             max={data.target}
             aria-label={
@@ -247,102 +356,128 @@ export default function EmployeeOverview({
                 : "Customer milestone progress"
             }
           />
-          <p>
+          <p className="metric-disclosure">
+            <Icon name="info" size={14} />
             {data.personal
-              ? "Build a relevant audience and meaningful opportunities."
-              : `${data.leads} potential customers in your pipeline`}
+              ? "Self-reported progress. Automatic verification isn’t connected."
+              : "Founder-confirmed purchases. Followers aren’t counted as customers."}
           </p>
-          <small>
-            {data.personal
-              ? "Self-reported total. Automatic goal verification is not connected."
-              : "Founder-confirmed purchases. Followers don’t count as sales."}
-          </small>
-          <button className="secondary" onClick={() => navigate("customers")}>
+          <button className="text-action" onClick={() => navigate("customers")}>
             {data.personal
               ? "View audience & opportunities"
               : "View customer pipeline"}
+            <Icon name="arrow" size={16} />
           </button>
         </section>
       </div>
-      <section className="panel employee-status">
-        <div>
-          <span className="eyebrow">EMPLOYEE STATUS</span>
+      <div className="overview-lower-grid">
+        <section className="panel readiness-panel">
+          <div className="panel-heading">
+            <div>
+              <span className="eyebrow">THE FOUNDATION</span>
+              <h2>Set up for meaningful growth</h2>
+            </div>
+            <span className="count-pill">
+              {steps.filter((s) => s.done).length} of {steps.length} ready
+            </span>
+          </div>
+          <ol className="setup-steps">
+            {steps.map((step, index) => (
+              <li key={step.view}>
+                <span
+                  className={step.done ? "step-number complete" : "step-number"}
+                >
+                  {step.done ? (
+                    <Icon name="check" size={15} />
+                  ) : (
+                    String(index + 1).padStart(2, "0")
+                  )}
+                </span>
+                <div>
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
+                </div>
+                <button
+                  className="step-action"
+                  aria-label={`${step.done ? "Manage" : "Open"} ${step.title}`}
+                  onClick={() => navigate(step.view)}
+                >
+                  {step.done ? "Manage" : "Set up"}
+                  <Icon name="arrow" size={15} />
+                </button>
+              </li>
+            ))}
+          </ol>
+        </section>
+        <section className="panel employee-status">
+          <div className="panel-heading">
+            <span className="eyebrow">EMPLOYEE ACTIVITY</span>
+            <Icon name="routine" size={18} />
+          </div>
+          <span
+            className={`activity-badge ${working ? "is-working" : reviewResearch || data.runStatus === "failed" ? "needs-attention" : ""}`}
+          >
+            <span className="status-dot" />
+            {statusText}
+          </span>
           <h2>
             {working
-              ? "Your employee is working"
+              ? "Good work is in progress."
               : reviewResearch
-                ? "Waiting for your research confirmation"
+                ? "Your perspective comes next."
                 : data.runStatus === "failed"
-                  ? "The latest assignment needs attention"
-                  : data.runStatus === "research_ready"
-                    ? "A monitoring report is ready"
-                    : data.runStatus === "needs_review"
-                      ? "Content is ready for review"
-                      : data.routine
-                        ? "Routine enabled"
-                        : "Ready when you are"}
+                  ? "Let’s check the latest assignment."
+                  : data.runStatus
+                    ? "Your latest work, in one place."
+                    : "Ready for your first assignment."}
           </h2>
           <p>
-            {working
-              ? "Research and preparation are in progress. No content is published by this assignment."
-              : "Your decisions and your employee’s outputs stay together in Research & content."}
+            {data.runGoal ||
+              "Once your profile is approved, give your employee a focused growth assignment."}
           </p>
-        </div>
-        <button className="secondary" onClick={() => navigate("content")}>
-          View activity
-        </button>
-      </section>
-      <section className="panel">
-        <span className="eyebrow">GET YOUR EMPLOYEE READY</span>
-        <h2>One setup. A clear path to useful work.</h2>
-        <ol className="setup-steps">
-          {steps.map((step, index) => (
-            <li key={step.view}>
-              <span
-                className={step.done ? "step-number complete" : "step-number"}
-              >
-                {step.done ? "✓" : index + 1}
-              </span>
-              <div>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
-                <small>
-                  {step.done
-                    ? "Ready"
-                    : step.view === "accounts"
-                      ? "Optional for the first research run"
-                      : "Needs setup"}
-                </small>
-              </div>
-              <button className="secondary" onClick={() => navigate(step.view)}>
-                {step.done ? "Manage" : "Open"}
-              </button>
-            </li>
-          ))}
-        </ol>
-      </section>
+          <button className="text-action" onClick={() => navigate("content")}>
+            View activity
+            <Icon name="arrow" size={16} />
+          </button>
+          <div className="activity-note">
+            <Icon name="shield" size={16} />
+            <p>
+              Research and drafts stay in review. This workflow does not publish
+              automatically.
+            </p>
+          </div>
+        </section>
+      </div>
       {(!data.search || data.template) && (
         <section className="capability-note">
-          <h3>
-            {data.template
-              ? "You’re using starter content"
-              : "Research setup needs attention"}
-          </h3>
-          <p>
-            {!data.search
-              ? "Automatic research needs a search provider key. Optional source notes are available under Advanced tools. "
-              : ""}
-            {data.template
-              ? "AI copy generation needs a configured model provider. Starter templates are labeled in the workspace."
-              : ""}
-          </p>
+          <Icon name="info" size={18} />
+          <div>
+            <h3>
+              {data.template
+                ? "Starter content mode"
+                : "Research setup needs attention"}
+            </h3>
+            <p>
+              {!data.search
+                ? "Automatic research needs a configured search provider. "
+                : ""}
+              {data.template
+                ? "Drafts currently use labeled templates. Connect a model provider for AI-written copy."
+                : ""}{" "}
+              Setup is managed by your workspace administrator.
+            </p>
+          </div>
         </section>
       )}
-      <p className="workspace-footnote">
-        Available now: research, confirmation, drafts and customer tracking.
-        Live interview processing, avatar video rendering and automatic social
-        publishing are still upcoming.
-      </p>
+      <details className="workspace-footnote">
+        <summary>What’s available in this workspace</summary>
+        <p>
+          Research, confirmation, drafts, social account connections and goal
+          tracking are available. Interview capture and avatar onboarding
+          include a labeled demo. Live interview processing, rendered avatar
+          videos and automatic social publishing remain upcoming.
+        </p>
+      </details>
     </div>
   );
 }

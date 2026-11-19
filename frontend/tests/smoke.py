@@ -46,7 +46,18 @@ def main():
         nav = page.get_by_role("navigation", name="Workspace sections", exact=True)
 
         def section(name):
-            nav.get_by_role("button", name=name, exact=True).click()
+            toggle = page.get_by_role("button", name="Open navigation", exact=True)
+            if toggle.is_visible():
+                toggle.click()
+            labels = {
+                "1. Company & founder": "Brand profile",
+                "1. You & your brand": "Your brand",
+                "2. Social accounts": "Social accounts",
+                "3. Research & content": "Content studio",
+                "4. Working routine": "Working routine",
+                "Advanced tools": "Workspace settings",
+            }
+            nav.get_by_role("button", name=labels.get(name, name), exact=True).click()
 
         section("2. Social accounts")
         page.get_by_role("button", name="Try demo connection flow", exact=True).click()
@@ -378,8 +389,9 @@ def main():
         ).to_be_visible()
         expect(
             page.get_by_label("Customer milestone progress", exact=True)
-        ).to_be_visible()
+        ).to_have_attribute("value", "1")
         page.screenshot(path="/tmp/founderos-overview.png", full_page=True)
+        page.screenshot(path="/tmp/founderos-desktop-preview.png")
         page.set_viewport_size({"width": 390, "height": 844})
         assert page.evaluate(
             "document.documentElement.scrollWidth <= window.innerWidth"
