@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api } from "./api";
+import AnswerGuide from "./AnswerGuide";
 
 type BrandData = {
   founder_name: string;
@@ -592,59 +593,80 @@ export default function GrowthTeam({
               />
             </label>
             <div className="grid">
-              <label>
-                What do you know well?
-                <textarea
-                  required
-                  aria-label="What do you know well?"
-                  aria-describedby="brand-skills-help"
-                  placeholder={
-                    "For example:\nBuilding websites\nKeeping customer data safe"
-                  }
-                  value={form.expertise.join("\n")}
-                  onChange={(e) =>
-                    setForm({ ...form, expertise: e.target.value.split("\n") })
-                  }
-                  onBlur={() =>
-                    setForm((f) => ({
-                      ...f,
-                      expertise: lines(f.expertise.join("\n")),
-                    }))
-                  }
-                />
-                <small id="brand-skills-help">
-                  List your skills or subjects you can explain. Put each one on
-                  a new line.
-                </small>
-              </label>
-              <label>
-                What topics should Rymu post about?
-                <textarea
-                  required
-                  aria-label="What topics should Rymu post about?"
-                  aria-describedby="brand-topics-help"
-                  placeholder={
-                    "For example:\nSimple security tips\nLessons from building a business"
-                  }
-                  value={form.content_pillars.join("\n")}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      content_pillars: e.target.value.split("\n"),
-                    })
-                  }
-                  onBlur={() =>
-                    setForm((f) => ({
-                      ...f,
-                      content_pillars: lines(f.content_pillars.join("\n")),
-                    }))
+              <div>
+                <label>
+                  What do you know well?
+                  <textarea
+                    required
+                    aria-label="What do you know well?"
+                    aria-describedby="brand-skills-help"
+                    placeholder={
+                      "For example:\nBuilding websites\nKeeping customer data safe"
+                    }
+                    value={form.expertise.join("\n")}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        expertise: e.target.value.split("\n"),
+                      })
+                    }
+                    onBlur={() =>
+                      setForm((f) => ({
+                        ...f,
+                        expertise: lines(f.expertise.join("\n")),
+                      }))
+                    }
+                  />
+                  <small id="brand-skills-help">
+                    List your skills or subjects you can explain. Put each one
+                    on a new line.
+                  </small>
+                </label>
+                <AnswerGuide
+                  kind="skills"
+                  existing={form.expertise.join("\n")}
+                  onUse={(answer) =>
+                    setForm({ ...form, expertise: lines(answer) })
                   }
                 />
-                <small id="brand-topics-help">
-                  Choose up to five topics for your posts. Put each topic on a
-                  new line.
-                </small>
-              </label>
+              </div>
+              <div>
+                <label>
+                  What topics should Rymu post about?
+                  <textarea
+                    required
+                    aria-label="What topics should Rymu post about?"
+                    aria-describedby="brand-topics-help"
+                    placeholder={
+                      "For example:\nSimple security tips\nLessons from building a business"
+                    }
+                    value={form.content_pillars.join("\n")}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        content_pillars: e.target.value.split("\n"),
+                      })
+                    }
+                    onBlur={() =>
+                      setForm((f) => ({
+                        ...f,
+                        content_pillars: lines(f.content_pillars.join("\n")),
+                      }))
+                    }
+                  />
+                  <small id="brand-topics-help">
+                    Choose up to five topics for your posts. Put each topic on a
+                    new line.
+                  </small>
+                </label>
+                <AnswerGuide
+                  kind="topics"
+                  existing={form.content_pillars.join("\n")}
+                  onUse={(answer) =>
+                    setForm({ ...form, content_pillars: lines(answer) })
+                  }
+                />
+              </div>
             </div>
             <label>
               How should Rymu write your posts?
@@ -663,6 +685,11 @@ export default function GrowthTeam({
                 professional.
               </small>
             </label>
+            <AnswerGuide
+              kind="style"
+              existing={form.voice}
+              onUse={(answer) => setForm({ ...form, voice: answer })}
+            />
             <label>
               Who do you help, and how?
               <textarea
@@ -682,6 +709,11 @@ export default function GrowthTeam({
                 help.
               </small>
             </label>
+            <AnswerGuide
+              kind="audience"
+              existing={form.positioning}
+              onUse={(answer) => setForm({ ...form, positioning: answer })}
+            />
             <div className="grid">
               <label>
                 Proof points you can substantiate (optional, one per line)

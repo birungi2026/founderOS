@@ -16,3 +16,5 @@ Switching sections preserves in-progress form and draft state. Reloading returns
 The browser smoke test covers navigation, hidden manual fields on Overview, both connection demos, saved founder approval, research confirmation/resumption, revision editing, lead purchase confirmation, routine persistence and mobile overflow.
 
 On phones a bottom bar provides Home, Create, Plan, Results and More. More reveals brand, account and workspace controls. The content cards open the corresponding output tab in the coordinated employee workspace; they do not bypass brand approval or research confirmation.
+
+Brand setup includes optional “Help me answer” guides for skills, post topics, writing style and audience. Customers answer smaller prompts or choose style words, preview the assembled answer, then explicitly add it to the editable field. Existing answers are replaced only through the labeled replacement action. These guides assemble the customer's own input locally; they do not call a model, invent credentials or automatically save/approve a brand version. The normal save and approval flow still applies.
