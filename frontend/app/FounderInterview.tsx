@@ -26,6 +26,7 @@ export default function FounderInterview({
     [url, setUrl] = useState(""),
     [sample, setSample] = useState(false),
     [recording, setRecording] = useState(false),
+    [recordedBytes, setRecordedBytes] = useState(0),
     [requesting, setRequesting] = useState(false),
     [error, setError] = useState(""),
     [notes, setNotes] = useState(""),
@@ -127,12 +128,22 @@ export default function FounderInterview({
           setError(
             "Recording exceeded 100 MB. Please record a shorter interview.",
           );
-        } else if (e.data.size) chunks.push(e.data);
+        } else if (e.data.size) {
+          chunks.push(e.data);
+          if (mounted.current) setRecordedBytes(bytes);
+        }
       };
       rec.onstop = () => {
         capture.getTracks().forEach((t) => t.stop());
         if (timer.current) clearTimeout(timer.current);
-        if (mounted.current && !oversized && chunks.length) {
+        if (mounted.current && !oversized) {
+          setRecording(false);
+          if (!chunks.length) {
+            setError(
+              "No video data was captured. Record a little longer or upload a video.",
+            );
+            return;
+          }
           setUrl(URL.createObjectURL(new Blob(chunks, { type: rec.mimeType })));
           setSample(false);
           setRecording(false);
@@ -142,6 +153,7 @@ export default function FounderInterview({
         stop();
         setError("Recording failed. Please try uploading a video.");
       };
+      setRecordedBytes(0);
       rec.start(1000);
       setRecording(true);
       setUrl("");
@@ -228,6 +240,13 @@ export default function FounderInterview({
                 <p role="status">
                   Recording locally · stops after 3 minutes. Move through the
                   questions while recording.
+                  <output
+                    aria-label="Recorded interview size"
+                    data-recorded-bytes={recordedBytes}
+                  >
+                    {" "}
+                    Captured: {Math.ceil(recordedBytes / 1024)} KB
+                  </output>
                 </p>
                 <button type="button" onClick={stop}>
                   Stop recording

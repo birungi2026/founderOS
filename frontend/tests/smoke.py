@@ -134,6 +134,11 @@ def main():
         page.wait_for_function(
             """() => { const video = document.querySelector('video[aria-label="Live interview camera preview"]'); if (!video?.srcObject) return false; window.interviewTestTracks = video.srcObject.getTracks(); return window.interviewTestTracks.length === 2; }"""
         )
+        # Wait for encoded data, not just an allocated camera stream. Leaving
+        # before the first frame can legitimately produce an empty recording.
+        page.wait_for_function(
+            """() => { const video = document.querySelector('video[aria-label="Live interview camera preview"]'); const size = document.querySelector('output[aria-label="Recorded interview size"]'); return video?.readyState >= 2 && Number(size?.dataset.recordedBytes) > 0; }"""
+        )
         section("2. Social accounts")
         page.wait_for_function(
             "() => window.interviewTestTracks.every(track => track.readyState === 'ended')"
