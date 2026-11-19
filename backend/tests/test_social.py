@@ -213,3 +213,131 @@ def test_cross_tenant_sync_and_disconnect_denied(client, configured, monkeypatch
     register(client, "outsider@example.com")
     assert client.post(f"/v1/social/accounts/{aid}/sync", json={}).status_code == 404
     assert client.post(f"/v1/social/accounts/{aid}/disconnect", json={}).status_code == 404
+
+
+@pytest.mark.parametrize("provider", ["linkedin", "tiktok"])
+def test_linkedin_tiktok_account_access(client, database, configured, monkeypatch, provider):
+    monkeypatch.setenv(provider.upper() + "_APP_ID", "app-key")
+    monkeypatch.setenv(provider.upper() + "_APP_SECRET", "app-secret")
+    monkeypatch.setenv(
+        provider.upper() + "_REDIRECT_URI", f"https://example.test/v1/social/{provider}/callback"
+    )
+    register(client)
+    pid = project(client)
+    calls = []
+
+    def fake(method, url, **kwargs):
+        calls.append((method, url, kwargs))
+        if url.endswith("accessToken") or url.endswith("/oauth/token/"):
+            return {
+                "access_token": "access-secret",
+                "scope": " ".join(social.SCOPES[provider]),
+                "expires_in": 3600,
+                "open_id": "open-123",
+            }
+        if url.endswith("userinfo"):
+            return {
+                "sub": "member-123",
+                "name": "Founder LinkedIn",
+                "email": "private@example.com",
+                "access_token": "no-leak",
+            }
+        if url.endswith("/user/info/"):
+            return {
+                "data": {
+                    "user": {
+                        "open_id": "open-123",
+                        "display_name": "Founder TikTok",
+                        "access_token": "no-leak",
+                    }
+                }
+            }
+        if url.endswith("/video/list/"):
+            return {
+                "data": {
+                    "videos": [
+                        {
+                            "id": "vid1",
+                            "title": "My story",
+                            "like_count": 5,
+                            "access_token": "no-leak",
+                        }
+                    ]
+                }
+            }
+        raise AssertionError(url)
+
+    monkeypatch.setattr(social, "call", fake)
+    state = authorize(client, pid, provider)
+    result = client.get(
+        f"/v1/social/{provider}/callback", params={"state": state, "code": "auth-code"}
+    )
+    assert result.status_code == 200, result.text
+    aid = client.get(f"/v1/projects/{pid}/social").json()["accounts"][0]["id"]
+    result = client.post(f"/v1/social/accounts/{aid}/sync", json={})
+    assert result.status_code == 200, result.text
+    assert "no-leak" not in result.text and "private@example.com" not in result.text
+    assert (
+        result.json()["snapshot"]["posts"] == []
+        if provider == "linkedin"
+        else len(result.json()["snapshot"]["posts"]) == 1
+    )
+    assert "limitations" in result.json()["snapshot"]
+    assert (
+        client.get(
+            f"/v1/social/{provider}/callback", params={"state": state, "code": "auth-code"}
+        ).status_code
+        == 400
+    )
+    exchange = calls[0]
+    assert exchange[0] == "POST"
+    assert exchange[2]["data"]["client_key" if provider == "tiktok" else "client_id"] == "app-key"
+    with database() as db:
+        assert "access-secret" not in db.get(SocialAccount, aid).encrypted_token
+    assert client.post(f"/v1/social/accounts/{aid}/disconnect", json={}).status_code == 200
+
+
+def test_tiktok_declined_video_scope_does_not_store_account(
+    client, configured, monkeypatch, database
+):
+    monkeypatch.setenv("TIKTOK_APP_ID", "app")
+    monkeypatch.setenv("TIKTOK_APP_SECRET", "secret")
+    monkeypatch.setenv("TIKTOK_REDIRECT_URI", "https://example.test/callback")
+    register(client)
+    pid = project(client)
+    state = authorize(client, pid, "tiktok")
+    monkeypatch.setattr(
+        social,
+        "call",
+        lambda *a, **k: {"access_token": "secret", "scope": "user.info.basic", "expires_in": 3600},
+    )
+    assert (
+        client.get(
+            "/v1/social/tiktok/callback", params={"state": state, "code": "code"}
+        ).status_code
+        == 400
+    )
+    with database() as db:
+        assert db.scalar(select(SocialAccount)) is None
+
+
+def test_tiktok_success_error_envelope_is_not_treated_as_failure(monkeypatch):
+    import httpx
+
+    real_client = httpx.Client
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(
+            200, json={"data": {"user": {"open_id": "id"}}, "error": {"code": "ok", "message": ""}}
+        )
+    )
+    monkeypatch.setattr(
+        social.httpx, "Client", lambda **kwargs: real_client(transport=transport, **kwargs)
+    )
+    assert (
+        social.call("GET", "https://open.tiktokapis.com/v2/user/info/")["data"]["user"]["open_id"]
+        == "id"
+    )
+    from fastapi import HTTPException
+
+    with pytest.raises(HTTPException):
+        social.call("GET", "https://api.linkedin.com/v2/userinfo")

@@ -7,6 +7,7 @@ import CompanyBrief from "./CompanyBrief";
 import FounderInterview from "./FounderInterview";
 import PersonalProgress from "./PersonalProgress";
 import SocialAccounts from "./SocialAccounts";
+import PlatformIntelligence from "./PlatformIntelligence";
 import EmployeeOverview, {
   WorkspaceView,
   workspaceViews,
@@ -677,6 +678,13 @@ export default function Home() {
                   orgId={orgId}
                   projectId={projectId}
                   canWrite={canWrite}
+                />
+              </div>
+              <div hidden={view !== "content"}>
+                <PlatformIntelligence
+                  key={"platforms" + orgId + projectId}
+                  orgId={orgId}
+                  projectId={projectId}
                 />
               </div>
               <div

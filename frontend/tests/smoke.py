@@ -60,7 +60,7 @@ def main():
                 "Demo connection cancelled. No access granted.", exact=True
             )
         ).to_be_visible()
-        for provider in ["Instagram", "Facebook Pages"]:
+        for provider in ["Instagram", "Facebook Pages", "LinkedIn", "TikTok"]:
             demo.get_by_role(
                 "button", name=f"Preview {provider} connection", exact=True
             ).click()
@@ -206,6 +206,17 @@ def main():
         page.get_by_role("button", name="Save brand version", exact=True).click()
         page.get_by_role("button", name="Approve brand version 1", exact=True).click()
         section("3. Research & content")
+        page.get_by_text("Platform growth intelligence", exact=True).click()
+        guidance_nav = page.get_by_role(
+            "navigation", name="Platform guidance", exact=True
+        )
+        guidance_nav.get_by_role("button", name="TikTok", exact=True).click()
+        expect(
+            page.get_by_role(
+                "heading", name="What the platform has published", exact=True
+            )
+        ).to_be_visible()
+        page.get_by_text("Platform growth intelligence", exact=True).click()
         page.get_by_label("Research method", exact=True).select_option("manual")
         page.get_by_label("Content cadence", exact=True).select_option("weekly")
         page.get_by_role("button", name="Start growth workflow", exact=True).click()
@@ -226,6 +237,14 @@ def main():
                 "Explore Founder lessons with Small software teams", exact=True
             )
         ).to_be_visible()
+        expect(
+            page.get_by_role(
+                "region", name="Platform research recommendations", exact=True
+            )
+        ).to_be_visible()
+        expect(
+            page.get_by_role("link", name="Platform evidence", exact=True)
+        ).to_have_count(4)
         page.get_by_role("button", name="Video studio", exact=True).click()
         expect(
             page.get_by_role("button", name="Copy video script", exact=True)

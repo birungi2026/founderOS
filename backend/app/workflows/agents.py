@@ -27,7 +27,7 @@ SCHEMAS = {
     "launch": LaunchArtifact,
 }
 INSTRUCTIONS = {
-    "research": "Explain company_understanding (problem, solution, target customers), differentiation_hypothesis, and competitor_observations grounded in supplied evidence with source_id and uncertainty. Distinguish founder-provided facts, competitor/news claims and unverified hypotheses. The founder must confirm this research before content creation. Identify content opportunities from supplied source excerpts. Return angle, audience_fit, evidence_ids and uncertainty for each. These are source-backed hypotheses, not independently verified live trends or promises of virality.",
+    "research": "Include platform_strategies for Instagram, TikTok, Facebook and LinkedIn based on versioned platform_guidance and source-backed updates. Cite the appropriate source_id or research evidence ID, label hypotheses, suggest one-variable experiments and metrics, and mark unavailable account insights rather than inventing them. Never claim private algorithm access, fixed ranking weights or guaranteed virality. Explain company_understanding (problem, solution, target customers), differentiation_hypothesis, and competitor_observations grounded in supplied evidence with source_id and uncertainty. Distinguish founder-provided facts, competitor/news claims and unverified hypotheses. The founder must confirm this research before content creation. Identify content opportunities from supplied source excerpts. Return angle, audience_fit, evidence_ids and uncertainty for each. These are source-backed hypotheses, not independently verified live trends or promises of virality.",
     "growth": "Create one seven-day content calendar with days 1 to 7 exactly once, an experiment and success metric. Adapt voice and topics to approved brand memory and research. Use actual performance context to propose what to test next; never invent results. Entries are unapproved drafts, not scheduled publications.",
     "video": "Create a 15–60 second video script with hook, scenes containing duration_seconds/narration/caption/visual, and call_to_action. This is a script, not rendered media. Use only the founder's supplied story and proof points. Do not imply voice cloning or licensed footage exists.",
     "launch": "Create a product launch message and phased actionable tasks. Use pre_launch, launch_day, follow_up and days_from_launch offsets. No automatic posting or paid actions. Include pre-launch review, launch-day publication approval and post-launch measurement.",
@@ -50,6 +50,17 @@ def templates(agent, ctx, artifacts):
             "differentiation_hypothesis": company.get("differentiator")
             or "Positioning needs competitor evidence and founder validation before being stated as a fact.",
             "competitor_observations": [],
+            "platform_strategies": [
+                {
+                    "platform": g["platform"],
+                    "ranking_summary": g["signal"],
+                    "experiment": g["experiment"],
+                    "success_metric": g["success_metric"],
+                    "evidence_ids": [g["source_id"]],
+                    "uncertainty": g["uncertainty"],
+                }
+                for g in ctx.get("platform_guidance", [])
+            ],
             "opportunities": [
                 {
                     "angle": f"Explore {pillar} with {project['audience']}",
@@ -249,12 +260,22 @@ def run_agent(agent, ctx, artifacts):
             raise ValueError("incorrect_daily_post_count")
         if len({entry["content"] for entry in payload["calendar"]}) != len(payload["calendar"]):
             raise ValueError("duplicate_daily_content")
-    allowed = {s["id"] for s in ctx["sources"]}
+    if agent == "research" and ctx.get("platform_guidance"):
+        if {s["platform"] for s in payload.get("platform_strategies", [])} != {
+            g["platform"] for g in ctx["platform_guidance"]
+        }:
+            raise ValueError("missing_platform_strategy")
+    allowed = {s["id"] for s in ctx["sources"]} | {
+        g["source_id"] for g in ctx.get("platform_guidance", [])
+    }
     cited = [
         i
         for row in payload.get("opportunities", payload.get("calendar", []))
         for i in row.get("evidence_ids", [])
     ]
+    cited.extend(
+        i for strategy in payload.get("platform_strategies", []) for i in strategy["evidence_ids"]
+    )
     cited.extend(candidate["source_id"] for candidate in payload.get("prospects", []))
     cited.extend(item["source_id"] for item in payload.get("competitor_observations", []))
     if not set(cited).issubset(allowed):

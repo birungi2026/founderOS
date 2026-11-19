@@ -34,6 +34,7 @@ from .models import (
     ResearchSource,
     User,
 )
+from .platforms import router as platforms_router
 from .security import (
     COOKIE,
     Tenant,
@@ -63,6 +64,7 @@ logger.propagate = False
 app = FastAPI(title="FounderOS API", version="0.3.0")
 app.include_router(workflow_router)
 app.include_router(social_router)
+app.include_router(platforms_router)
 app.include_router(customers_router)
 app.include_router(company_router)
 app.include_router(schedules_router)

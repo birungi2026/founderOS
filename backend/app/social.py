@@ -1,5 +1,6 @@
 """Owner-authorized, read-only social account access. Tokens never enter agent prompts."""
 
+import math
 import os
 import re
 import secrets
@@ -23,6 +24,8 @@ router = APIRouter(prefix="/v1", tags=["Social accounts"])
 SCOPES = {
     "instagram": ["instagram_business_basic"],
     "facebook": ["pages_show_list", "pages_read_engagement"],
+    "linkedin": ["openid", "profile"],
+    "tiktok": ["user.info.basic", "video.list"],
 }
 
 
@@ -37,6 +40,8 @@ def config(provider):
         if redirect.scheme != "https" and not (
             redirect.scheme == "http" and redirect.hostname in {"localhost", "127.0.0.1"}
         ):
+            raise ValueError()
+        if provider == "tiktok" and redirect.scheme != "https":
             raise ValueError()
         if not all(values) or redirect.query or redirect.fragment or redirect.username:
             raise ValueError()
@@ -69,7 +74,13 @@ def call(method, url, **kwargs):
             if len(response.content) > 1_000_000:
                 raise ValueError()
             data = response.json()
-            if not isinstance(data, dict) or "error" in data:
+            if not isinstance(data, dict):
+                raise ValueError()
+            if "error" in data and not (
+                url.startswith("https://open.tiktokapis.com/")
+                and isinstance(data["error"], dict)
+                and data["error"].get("code") == "ok"
+            ):
                 raise ValueError()
             return data
     except (httpx.HTTPError, ValueError):
@@ -83,7 +94,9 @@ def public(row):
         "id": row.id,
         "provider": row.provider,
         "name": row.name,
-        "status": "expired" if row.expires_at <= time.time() else row.status,
+        "status": "disconnected"
+        if row.status == "disconnected"
+        else ("expired" if row.expires_at <= time.time() else row.status),
         "permissions": row.permissions,
         "expires_at": row.expires_at,
         "snapshot": row.snapshot,
@@ -134,24 +147,76 @@ def connect(
             expires_at=time.time() + 600,
         )
     )
-    endpoint = (
-        "https://www.instagram.com/oauth/authorize"
-        if provider == "instagram"
-        else f"https://www.facebook.com/{graph(provider).rsplit('/', 1)[1]}/dialog/oauth"
-    )
-    return {
-        "authorization_url": endpoint
-        + "?"
-        + urlencode(
-            {
-                "client_id": app_id,
-                "redirect_uri": redirect,
-                "response_type": "code",
-                "scope": ",".join(SCOPES[provider]),
-                "state": state,
-            }
-        )
+    endpoint = {
+        "instagram": "https://www.instagram.com/oauth/authorize",
+        "facebook": f"https://www.facebook.com/{graph('facebook').rsplit('/', 1)[1]}/dialog/oauth",
+        "linkedin": "https://www.linkedin.com/oauth/v2/authorization",
+        "tiktok": "https://www.tiktok.com/v2/auth/authorize/",
+    }[provider]
+    params = {
+        "client_key" if provider == "tiktok" else "client_id": app_id,
+        "redirect_uri": redirect,
+        "response_type": "code",
+        "scope": (" " if provider == "linkedin" else ",").join(SCOPES[provider]),
+        "state": state,
     }
+    return {"authorization_url": endpoint + "?" + urlencode(params)}
+
+
+def token_expiry(value):
+    try:
+        seconds = float(value)
+        if not math.isfinite(seconds) or seconds <= 0:
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise HTTPException(502, "Invalid provider token expiry") from None
+    return time.time() + min(seconds, 5184000)
+
+
+def other_provider_exchange(provider, params):
+    data = dict(params, grant_type="authorization_code")
+    if provider == "tiktok":
+        data["client_key"] = data.pop("client_id")
+    endpoint = (
+        "https://www.linkedin.com/oauth/v2/accessToken"
+        if provider == "linkedin"
+        else "https://open.tiktokapis.com/v2/oauth/token/"
+    )
+    response = call("POST", endpoint, data=data)
+    token = response.get("access_token")
+    if not isinstance(token, str) or not token or len(token) > 4000:
+        raise HTTPException(502, "Provider did not return valid account access")
+    permissions = response.get("scope")
+    granted = (
+        permissions.replace(",", " ").split()
+        if isinstance(permissions, str)
+        else (SCOPES[provider] if provider == "linkedin" else [])
+    )
+    if not set(SCOPES[provider]).issubset(granted):
+        raise HTTPException(400, "Required social permission was not granted")
+    headers = {"Authorization": f"Bearer {token}"}
+    if provider == "linkedin":
+        profile = call("GET", "https://api.linkedin.com/v2/userinfo", headers=headers)
+        external_id, name = profile.get("sub"), profile.get("name")
+    else:
+        profile = (
+            call(
+                "GET",
+                "https://open.tiktokapis.com/v2/user/info/",
+                params={"fields": "open_id,display_name"},
+                headers=headers,
+            )
+            .get("data", {})
+            .get("user", {})
+        )
+        external_id, name = profile.get("open_id"), profile.get("display_name")
+        if response.get("open_id") != external_id:
+            raise HTTPException(502, "Provider account did not match token authorization")
+    return (
+        [{"id": external_id, "name": name, "access_token": token}],
+        granted,
+        token_expiry(response.get("expires_in", 3600)),
+    )
 
 
 @router.get("/social/{provider}/callback", response_class=HTMLResponse)
@@ -239,7 +304,9 @@ def callback(
                 "access_token": token,
             }
         ]
-        expires = time.time() + min(float(long.get("expires_in", 3600)), 5184000)
+        expires = token_expiry(long.get("expires_in", 3600))
+    elif provider in {"linkedin", "tiktok"}:
+        entries, granted, expires = other_provider_exchange(provider, params)
     else:
         short = call("GET", graph(provider) + "/oauth/access_token", params=params)
         long = call(
@@ -266,16 +333,26 @@ def callback(
             params={"fields": "id,name,access_token", "limit": 100},
             headers=headers,
         ).get("data", [])
-        expires = time.time() + min(float(long.get("expires_in", 3600)), 5184000)
+        expires = token_expiry(long.get("expires_in", 3600))
     if not entries:
         raise HTTPException(
             400,
             "No eligible accounts found; connect an Instagram professional account or Facebook Page",
         )
     for entry in entries[:100]:
-        external_id = str(entry.get("id", ""))
+        external_id = str(entry.get("id") or "")
         access_token = entry.get("access_token")
-        if not external_id.isdigit() or not isinstance(access_token, str) or not access_token:
+        valid_id = (
+            external_id.isdigit()
+            if provider in {"instagram", "facebook"}
+            else bool(re.fullmatch(r"[A-Za-z0-9_.:-]{1,100}", external_id))
+        )
+        if (
+            not valid_id
+            or not isinstance(access_token, str)
+            or not access_token
+            or len(access_token) > 4000
+        ):
             raise HTTPException(502, "Unexpected social provider account response")
         account = db.scalar(
             select(SocialAccount).where(
@@ -308,6 +385,53 @@ def callback(
     )
 
 
+def other_provider_snapshot(row, token):
+    headers = {"Authorization": f"Bearer {token}"}
+    if row.provider == "linkedin":
+        profile = call("GET", "https://api.linkedin.com/v2/userinfo", headers=headers)
+        if profile.get("sub") != row.external_id:
+            raise HTTPException(502, "Provider account changed; reconnect")
+        return {
+            "observed_at": time.time(),
+            "profile": {
+                k: profile[k] for k in ["sub", "name", "given_name", "family_name"] if k in profile
+            },
+            "posts": [],
+            "limitations": "Profile only. Reading posts, followers and analytics requires additional LinkedIn product approval.",
+        }
+    fields = "open_id,display_name"
+    profile = (
+        call(
+            "GET",
+            "https://open.tiktokapis.com/v2/user/info/",
+            params={"fields": fields},
+            headers=headers,
+        )
+        .get("data", {})
+        .get("user", {})
+    )
+    if profile.get("open_id") != row.external_id:
+        raise HTTPException(502, "Provider account changed; reconnect")
+    video_fields = "id,title,video_description,create_time,share_url,view_count,like_count,comment_count,share_count"
+    videos = (
+        call(
+            "POST",
+            "https://open.tiktokapis.com/v2/video/list/",
+            params={"fields": video_fields},
+            json={"max_count": 20},
+            headers=headers,
+        )
+        .get("data", {})
+        .get("videos", [])
+    )
+    return {
+        "observed_at": time.time(),
+        "profile": {k: profile[k] for k in fields.split(",") if k in profile},
+        "posts": [{k: v[k] for k in video_fields.split(",") if k in v} for v in videos[:20]],
+        "limitations": "Public videos only. Follower totals and watch retention are not granted by the requested scopes.",
+    }
+
+
 @router.post("/social/accounts/{account_id}/sync")
 def sync(account_id: str, context: Tenant = Depends(owner), db: Session = Depends(get_db)):
     row = db.get(SocialAccount, account_id)
@@ -320,38 +444,42 @@ def sync(account_id: str, context: Tenant = Depends(owner), db: Session = Depend
         token = vault().decrypt(row.encrypted_token.encode()).decode()
     except InvalidToken:
         raise HTTPException(409, "Reconnect this social account") from None
-    fields = (
-        "user_id,username,followers_count,media_count"
-        if row.provider == "instagram"
-        else "id,name,followers_count,fan_count"
-    )
-    headers = {"Authorization": f"Bearer {token}"}
-    profile = call(
-        "GET",
-        graph(row.provider) + "/" + row.external_id,
-        params={"fields": fields},
-        headers=headers,
-    )
-    edge = "media" if row.provider == "instagram" else "posts"
-    media_fields = (
-        "id,caption,media_type,permalink,timestamp,like_count,comments_count"
-        if row.provider == "instagram"
-        else "id,message,permalink_url,created_time"
-    )
-    media = call(
-        "GET",
-        graph(row.provider) + f"/{row.external_id}/{edge}",
-        params={"fields": media_fields, "limit": 25},
-        headers=headers,
-    )
-    # Allowlisted data only. Provider tokens, paging cursors and error bodies are discarded.
-    snapshot = {
-        "observed_at": time.time(),
-        "profile": {k: profile[k] for k in fields.split(",") if k in profile},
-        "posts": [
-            {k: p[k] for k in media_fields.split(",") if k in p} for p in media.get("data", [])[:25]
-        ],
-    }
+    if row.provider in {"linkedin", "tiktok"}:
+        snapshot = other_provider_snapshot(row, token)
+    else:
+        fields = (
+            "user_id,username,followers_count,media_count"
+            if row.provider == "instagram"
+            else "id,name,followers_count,fan_count"
+        )
+        headers = {"Authorization": f"Bearer {token}"}
+        profile = call(
+            "GET",
+            graph(row.provider) + "/" + row.external_id,
+            params={"fields": fields},
+            headers=headers,
+        )
+        edge = "media" if row.provider == "instagram" else "posts"
+        media_fields = (
+            "id,caption,media_type,permalink,timestamp,like_count,comments_count"
+            if row.provider == "instagram"
+            else "id,message,permalink_url,created_time"
+        )
+        media = call(
+            "GET",
+            graph(row.provider) + f"/{row.external_id}/{edge}",
+            params={"fields": media_fields, "limit": 25},
+            headers=headers,
+        )
+        # Allowlisted data only. Provider tokens, paging cursors and error bodies are discarded.
+        snapshot = {
+            "observed_at": time.time(),
+            "profile": {k: profile[k] for k in fields.split(",") if k in profile},
+            "posts": [
+                {k: p[k] for k in media_fields.split(",") if k in p}
+                for p in media.get("data", [])[:25]
+            ],
+        }
     changed = db.execute(
         update(SocialAccount)
         .where(
