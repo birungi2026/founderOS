@@ -336,7 +336,7 @@ export default function FounderInterview({
                 />
                 <p>
                   Your recording stays in this browser’s memory. It is not saved
-                  to your FounderOS account.
+                  to your Rymu account.
                 </p>
               </>
             )}

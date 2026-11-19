@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api } from "./api";
 import { goalLabels } from "./PersonalProgress";
 import Icon from "./Icon";
+import CreationChoices from "./CreationChoices";
 export type WorkspaceView =
   | "overview"
   | "profile"
@@ -33,6 +34,13 @@ type Summary = {
   target: number;
   leads: number;
   reviews: number;
+  recent: {
+    id: string;
+    content: string;
+    channel: string;
+    status: string;
+    generation?: { run_id?: string };
+  }[];
   search: boolean;
   template: boolean;
 };
@@ -41,11 +49,15 @@ export default function EmployeeOverview({
   projectId,
   navigate,
   refreshKey,
+  create,
+  projectName,
 }: {
   orgId: string;
   projectId: string;
   navigate: (view: WorkspaceView) => void;
   refreshKey: number;
+  create: (tab: string, runId?: string) => void;
+  projectName: string;
 }) {
   const [data, setData] = useState<Summary | null>(null),
     [error, setError] = useState("");
@@ -104,6 +116,7 @@ export default function EmployeeOverview({
             reviews: drafts.drafts.filter(
               (d: { status: string }) => d.status === "pending",
             ).length,
+            recent: drafts.drafts.slice(0, 3),
             search: agents.research_configured,
             template: agents.generation_mode !== "llm",
           });
@@ -234,60 +247,102 @@ export default function EmployeeOverview({
             : "Ready for an assignment";
   return (
     <div className="employee-overview">
-      <div className="metric-strip">
-        {[
-          {
-            icon: "content",
-            label: "Drafts to review",
-            value: String(data.reviews),
-            detail: data.reviews
-              ? "Your approval is needed"
-              : "Nothing waiting for review",
-            view: "content" as const,
-          },
-          {
-            icon: "accounts",
-            label: "Connected accounts",
-            value: String(data.accounts),
-            detail: "Authorized social connections",
-            view: "accounts" as const,
-          },
-          {
-            icon: "routine",
-            label: "Content routine",
-            value: data.routine ? "Active" : "Not set",
-            detail: data.routine
-              ? "Preparation is scheduled"
-              : "Set your working rhythm",
-            view: "routine" as const,
-          },
-          {
-            icon: "profile",
-            label: "Brand profile",
-            value: data.brand ? "Approved" : "Needs setup",
-            detail: data.brand
-              ? "Your employee has context"
-              : "Introduce yourself and your brand",
-            view: "profile" as const,
-          },
-        ].map((item) => (
-          <button
-            className="metric-tile"
-            key={item.label}
-            onClick={() => navigate(item.view)}
-          >
-            <span className="metric-label">
-              <Icon name={item.icon} size={17} />
-              {item.label}
-            </span>
-            <strong>{item.value}</strong>
-            <span className="metric-detail">
-              {item.detail}
-              <Icon name="arrow" size={15} />
-            </span>
+      <section className="rymu-welcome">
+        <div>
+          <span className="eyebrow">YOUR AI GROWTH EMPLOYEE</span>
+          <h2>
+            A bigger audience starts
+            <br className="desktop-break" /> with your next good idea.
+          </h2>
+          <p>
+            Make room for what you do best. Rymu helps with the research, the
+            words and the plan.
+          </p>
+          <button onClick={() => create("research")}>
+            Let’s get to work <Icon name="arrow" size={18} />
           </button>
-        ))}
+        </div>
+        <div className="welcome-collage" aria-hidden="true">
+          <div className="collage-note">
+            YOUR NEXT
+            <br />
+            <em>big thing.</em>
+            <span>Starts with you ↗</span>
+          </div>
+          <div className="collage-orbit" />
+          <img src="/rymu-mark.png" alt="" width="110" height="110" />
+          <span className="collage-chip">Ideas → Content → Connections</span>
+        </div>
+      </section>
+      <CreationChoices onChoose={create} />
+      <div className="home-pulse" aria-label="Workspace snapshot">
+        <button onClick={() => navigate("content")}>
+          <Icon name="content" />
+          <strong>{data.reviews}</strong>
+          <span>drafts to review</span>
+          <Icon name="arrow" size={16} />
+        </button>
+        <button onClick={() => navigate("accounts")}>
+          <Icon name="accounts" />
+          <strong>{data.accounts}</strong>
+          <span>connected accounts</span>
+          <Icon name="arrow" size={16} />
+        </button>
+        <button onClick={() => navigate("routine")}>
+          <Icon name="routine" />
+          <strong>{data.routine ? "On" : "Off"}</strong>
+          <span>content routine</span>
+          <Icon name="arrow" size={16} />
+        </button>
       </div>
+      <section className="recent-section" aria-label="Saved content">
+        <div className="studio-section-heading">
+          <div>
+            <span className="eyebrow">{projectName}</span>
+            <h2>Your content, all together</h2>
+          </div>
+          <button className="text-action" onClick={() => create("growth")}>
+            Open library <Icon name="arrow" size={16} />
+          </button>
+        </div>
+        {data.recent.length ? (
+          <div className="recent-grid">
+            {data.recent.map((draft) => (
+              <button
+                className="recent-draft"
+                key={draft.id}
+                data-campaign={draft.generation?.run_id}
+                onClick={() => create("growth", draft.generation?.run_id)}
+              >
+                <span className="draft-platform">
+                  {draft.channel}
+                  <span>{draft.status.replaceAll("_", " ")}</span>
+                </span>
+                <p>{draft.content}</p>
+                <span className="choice-link">
+                  Review draft <Icon name="arrow" size={15} />
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="library-empty">
+            <span className="empty-stack" aria-hidden="true">
+              <Icon name="content" size={30} />
+            </span>
+            <div>
+              <h3>Your first draft belongs here.</h3>
+              <p>
+                Introduce your brand, then let Rymu research and prepare your
+                first content.
+              </p>
+            </div>
+            <button className="secondary" onClick={() => navigate("profile")}>
+              Set up my brand <Icon name="arrow" size={16} />
+            </button>
+          </div>
+        )}
+      </section>
       <div className="overview-grid">
         <section className="panel next-action">
           <div className="next-action-art" aria-hidden="true">
@@ -299,7 +354,7 @@ export default function EmployeeOverview({
             </svg>
           </div>
           <span className="eyebrow">
-            <span className="eyebrow-dot" /> YOUR NEXT MOVE
+            <span className="eyebrow-dot" /> PICK UP WHERE YOU LEFT OFF
           </span>
           <h2>{next.title}</h2>
           <p>{next.text}</p>
@@ -314,7 +369,7 @@ export default function EmployeeOverview({
         </section>
         <section className="panel goal-summary">
           <div className="panel-heading">
-            <span className="eyebrow">YOUR NORTH STAR</span>
+            <span className="eyebrow">YOUR GROWTH GOAL</span>
             <Icon name="target" size={18} />
           </div>
           <h3>{data.personal ? data.metric : "First paying customers"}</h3>
@@ -370,84 +425,89 @@ export default function EmployeeOverview({
           </button>
         </section>
       </div>
-      <div className="overview-lower-grid">
-        <section className="panel readiness-panel">
-          <div className="panel-heading">
-            <div>
-              <span className="eyebrow">THE FOUNDATION</span>
-              <h2>Set up for meaningful growth</h2>
+      <details className="home-more">
+        <summary>Your employee setup & activity</summary>
+        <div className="overview-lower-grid">
+          <section className="panel readiness-panel">
+            <div className="panel-heading">
+              <div>
+                <span className="eyebrow">A FEW STEPS. THEN YOU’RE READY.</span>
+                <h2>Your launch checklist</h2>
+              </div>
+              <span className="count-pill">
+                {steps.filter((s) => s.done).length} of {steps.length} ready
+              </span>
             </div>
-            <span className="count-pill">
-              {steps.filter((s) => s.done).length} of {steps.length} ready
+            <ol className="setup-steps">
+              {steps.map((step, index) => (
+                <li key={step.view}>
+                  <span
+                    className={
+                      step.done ? "step-number complete" : "step-number"
+                    }
+                  >
+                    {step.done ? (
+                      <Icon name="check" size={15} />
+                    ) : (
+                      String(index + 1).padStart(2, "0")
+                    )}
+                  </span>
+                  <div>
+                    <h3>{step.title}</h3>
+                    <p>{step.description}</p>
+                  </div>
+                  <button
+                    className="step-action"
+                    aria-label={`${step.done ? "Manage" : "Open"} ${step.title}`}
+                    onClick={() => navigate(step.view)}
+                  >
+                    {step.done ? "Manage" : "Set up"}
+                    <Icon name="arrow" size={15} />
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
+          <section className="panel employee-status">
+            <div className="panel-heading">
+              <span className="eyebrow">EMPLOYEE ACTIVITY</span>
+              <Icon name="routine" size={18} />
+            </div>
+            <span
+              className={`activity-badge ${working ? "is-working" : reviewResearch || data.runStatus === "failed" ? "needs-attention" : ""}`}
+            >
+              <span className="status-dot" />
+              {statusText}
             </span>
-          </div>
-          <ol className="setup-steps">
-            {steps.map((step, index) => (
-              <li key={step.view}>
-                <span
-                  className={step.done ? "step-number complete" : "step-number"}
-                >
-                  {step.done ? (
-                    <Icon name="check" size={15} />
-                  ) : (
-                    String(index + 1).padStart(2, "0")
-                  )}
-                </span>
-                <div>
-                  <h3>{step.title}</h3>
-                  <p>{step.description}</p>
-                </div>
-                <button
-                  className="step-action"
-                  aria-label={`${step.done ? "Manage" : "Open"} ${step.title}`}
-                  onClick={() => navigate(step.view)}
-                >
-                  {step.done ? "Manage" : "Set up"}
-                  <Icon name="arrow" size={15} />
-                </button>
-              </li>
-            ))}
-          </ol>
-        </section>
-        <section className="panel employee-status">
-          <div className="panel-heading">
-            <span className="eyebrow">EMPLOYEE ACTIVITY</span>
-            <Icon name="routine" size={18} />
-          </div>
-          <span
-            className={`activity-badge ${working ? "is-working" : reviewResearch || data.runStatus === "failed" ? "needs-attention" : ""}`}
-          >
-            <span className="status-dot" />
-            {statusText}
-          </span>
-          <h2>
-            {working
-              ? "Good work is in progress."
-              : reviewResearch
-                ? "Your perspective comes next."
-                : data.runStatus === "failed"
-                  ? "Let’s check the latest assignment."
-                  : data.runStatus
-                    ? "Your latest work, in one place."
-                    : "Ready for your first assignment."}
-          </h2>
-          <p>
-            {data.runGoal ||
-              "Once your profile is approved, give your employee a focused growth assignment."}
-          </p>
-          <button className="text-action" onClick={() => navigate("content")}>
-            View activity
-            <Icon name="arrow" size={16} />
-          </button>
-          <div className="activity-note">
-            <Icon name="shield" size={16} />
+            <h2>
+              {working
+                ? "Good work is in progress."
+                : reviewResearch
+                  ? "Your perspective comes next."
+                  : data.runStatus === "failed"
+                    ? "Let’s check the latest assignment."
+                    : data.runStatus
+                      ? "Your latest work, in one place."
+                      : "Ready for your first assignment."}
+            </h2>
             <p>
-              Research and drafts stay in review. This workflow does not publish
-              automatically.
+              {data.runGoal ||
+                "Once your profile is approved, give your employee a focused growth assignment."}
             </p>
-          </div>
-        </section>
-      </div>
+            <button className="text-action" onClick={() => navigate("content")}>
+              View activity
+              <Icon name="arrow" size={16} />
+            </button>
+            <div className="activity-note">
+              <Icon name="shield" size={16} />
+              <p>
+                Research and drafts stay in review. This workflow does not
+                publish automatically.
+              </p>
+            </div>
+          </section>
+        </div>
+      </details>
       {(!data.search || data.template) && (
         <section className="capability-note">
           <Icon name="info" size={18} />

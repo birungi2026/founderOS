@@ -1,21 +1,21 @@
-# FounderOS dashboard design
+# Rymu content studio design
 
-The product uses a persistent navy sidebar, neutral workspace surfaces, restrained mint accents and a system font stack that needs no external font service. The FounderOS mark and line icons are original inline SVG/CSS, keeping the UI deterministic and lightweight. The existing functional components share the same buttons, inputs, panels, tabs, notices and content-card styles.
+Rymu replaces the FounderOS product identity. The chosen growth-partner symbol lives at `frontend/public/rymu-mark.png`; the wordmark is live text. Brand targets are indigo `#302399`, coral `#F47C73` and warm white `#FAF8F5`. Generated PNG pixels may vary slightly. System fonts avoid external font-service dependencies.
 
-## Information hierarchy
+## Product structure
 
-- Sidebar: workspace/project selectors and Overview, Brand profile (Your brand for individuals), Social accounts, Content studio, Working routine, Customers/Audience & opportunities and Workspace settings.
-- Header: location, actual workspace type and sign-out action. Account initials and organization role use signed-in user data.
-- Overview: real draft-review count, active account count, saved routine state and approved profile status; a primary next action; goal progress; readiness checklist; latest assignment state.
-- Goal rings are calculated from stored goal progress. They never imply historical growth or fabricate a time series. Purchases remain founder-confirmed, personal-brand totals remain self-reported, and missing account metrics stay unknown.
-- Configuration limitations are quieter contextual notices. Interview/avatar demos, template generation and unavailable publishing features remain labeled. There are no fabricated customer logos, security certifications, revenue charts, testimonials or simulated activity presented as live data.
+Home prioritizes creation: three illustrated entry points open video scripts, social-post calendars and research outputs in the existing coordinated workflow. Illustrations are decorative CSS artwork, not fake generated assets or playable videos. Saved content previews come from stored drafts; no sample engagement or fabricated revenue appears. Setup and employee activity are available in a disclosure, alongside real goal progress and the next required action.
 
-## Interaction and accessibility
+A white desktop sidebar contains Home, Brand profile/Your brand, Social accounts, Content studio, Content plan, Results and Settings. The compact header shows the active project. Below 820px a persistent bottom bar provides Home, Create, Plan, Results and More. More and the header menu reveal account/project selectors and secondary navigation. The menu is a disclosure, not a focus-trapping modal. Safe-area padding keeps controls above phone system UI.
 
-At 820px and below, the sidebar becomes a collapsible navigation area with an expanded-state button. It is not a modal and does not trap focus. Navigation buttons use their visible labels as accessible names and mark the active section. Switching sections scrolls the content to the top while preserving component/form state. Keyboard focus is visible, icons are decorative, and reduced-motion preferences disable transitions. Native progress elements accompany the decorative goal rings for assistive technology.
+Horizontal creation cards use contained scrolling and scroll snapping on narrow phones. Forms use 16px inputs, buttons have at least 44px targets, keyboard focus remains visible and reduced-motion preferences disable decorative transforms. Desktop and phone use the same permission checks and saved state.
 
-The browser regression covers both business and personal-brand flows, mobile navigation, all four social demos, research confirmation, draft editing, interview capture teardown, customer/progress updates and routine persistence. Desktop and mobile screenshots are inspected for layout and overflow.
+## Reference and boundaries
 
-## Simple signup
+Zeely's [public project guide](https://zeely.ai/blog/setting-up-your-first-zeely-project/) and [mobile video guide](https://help.zeely.ai/en/articles/11003687-how-to-create-a-talking-head-video) informed the short setup, visual creation choices, persistent mobile navigation and saved-content concept. Rymu retains its own identity, artwork, copy and founder-research approval flow. No access to Zeely's private customer dashboard is implied.
 
-New visitors enter an email and password, then choose My business or My personal brand. Workspace names are created automatically; company and brand details follow account creation. Password visibility is optional, the 12-character requirement remains, and returning users can switch to Sign in. No unavailable social sign-in buttons are displayed.
+Research confirmation and content approvals remain required. Video output is a script; interview/provider onboarding remains a labeled preview. This redesign does not implement Tavus rendering, automatic publishing, billing or an App Store release. Signup remains email/password plus a business/personal-brand choice, with automatic workspace names and the existing 12-character password requirement.
+
+## Deployment
+
+The intended public brand domain is `rymu.ai`; metadata and favicon use Rymu. DNS is not configured by this change. Existing API identifiers, database names, Docker service names and environment-variable names remain compatible. The runtime image now copies `public` so the logo is available in Docker deployments.

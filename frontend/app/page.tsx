@@ -9,6 +9,8 @@ import FounderInterview from "./FounderInterview";
 import PersonalProgress from "./PersonalProgress";
 import SocialAccounts from "./SocialAccounts";
 import PlatformIntelligence from "./PlatformIntelligence";
+import RymuBrand from "./RymuBrand";
+import CreationChoices from "./CreationChoices";
 import EmployeeOverview, {
   WorkspaceView,
   workspaceViews,
@@ -86,17 +88,36 @@ export default function Home() {
   const [pipelineRefresh, setPipelineRefresh] = useState(0);
   const [view, setView] = useState<WorkspaceView>("overview");
   const [navOpen, setNavOpen] = useState(false);
+  const [contentIntent, setContentIntent] = useState<{
+    tab: string;
+    request: number;
+    runId?: string;
+    projectId?: string;
+  }>({
+    tab: "growth",
+    request: 0,
+  });
+  function openStudio(tab: string, runId?: string) {
+    setContentIntent((current) => ({
+      tab,
+      runId,
+      projectId,
+      request: current.request + 1,
+    }));
+    setView("content");
+  }
   const viewNames: Record<string, string> = {
-    overview: "Overview",
+    overview: "Home",
     profile: personal ? "Your brand" : "Brand profile",
     accounts: "Social accounts",
     content: "Content studio",
-    routine: "Working routine",
-    customers: personal ? "Audience & opportunities" : "Customers",
-    settings: "Workspace settings",
+    routine: "Content plan",
+    customers: "Results",
+    settings: "Settings",
   };
   useEffect(() => {
     setView("overview");
+    setContentIntent({ tab: "growth", request: 0 });
   }, [projectId, orgId]);
   useEffect(() => {
     if (projectId) window.scrollTo({ top: 0, behavior: "auto" });
@@ -316,12 +337,9 @@ export default function Home() {
                 setView("overview");
                 setNavOpen(false);
               }}
-              aria-label="FounderOS overview"
+              aria-label="Rymu home"
             >
-              <span className="brand-mark" aria-hidden="true">
-                F<span />
-              </span>
-              Founder<span className="brand-light">OS</span>
+              <RymuBrand />
             </a>
             <button
               type="button"
@@ -413,17 +431,49 @@ export default function Home() {
           </div>
         </aside>
       )}
+      {identity && projectId && (
+        <nav className="phone-nav" aria-label="Phone navigation">
+          {(
+            [
+              ["overview", "Home"],
+              ["content", "Create"],
+              ["routine", "Plan"],
+              ["customers", "Results"],
+            ] as [WorkspaceView, string][]
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              aria-current={view === id ? "page" : undefined}
+              onClick={() => {
+                setView(id);
+                setNavOpen(false);
+              }}
+            >
+              <Icon name={id} size={21} />
+              <span>{label}</span>
+            </button>
+          ))}
+          <button
+            aria-label="More navigation"
+            aria-expanded={navOpen}
+            onClick={() => setNavOpen(!navOpen)}
+          >
+            <Icon name="menu" size={21} />
+            <span>More</span>
+          </button>
+        </nav>
+      )}
       <div className="main-stage">
         <header className="app-topbar">
           {identity ? (
             <div className="topbar-breadcrumb">
-              <span>Workspace</span>
+              <span>{activeProject?.product_name || "Your workspace"}</span>
               <span aria-hidden="true">/</span>
               <strong>{projectId ? viewNames[view] : "Get started"}</strong>
             </div>
           ) : (
             <a className="auth-brand" href="/">
-              FounderOS
+              <RymuBrand />
             </a>
           )}
           {identity && (
@@ -728,10 +778,14 @@ export default function Home() {
                     {projects.find((p) => p.id === projectId)?.product_name}
                   </h2>
                 </div>
-                <section className="view-description" aria-live="polite">
+                <section
+                  className="view-description"
+                  aria-live="polite"
+                  hidden={view === "overview"}
+                >
                   <h2>
                     {view === "overview"
-                      ? "Your day at a glance"
+                      ? "Let’s grow something great."
                       : personal && view === "customers"
                         ? "Audience & opportunities"
                         : personal && view === "profile"
@@ -770,6 +824,8 @@ export default function Home() {
                       orgId={orgId}
                       projectId={projectId}
                       navigate={setView}
+                      create={openStudio}
+                      projectName={activeProject?.product_name || "Your brand"}
                       refreshKey={pipelineRefresh}
                     />
                   </div>
@@ -855,6 +911,7 @@ export default function Home() {
                   />
                 </div>
                 <div hidden={view !== "content"}>
+                  <CreationChoices onChoose={openStudio} compact />
                   <PlatformIntelligence
                     key={"platforms" + orgId + projectId}
                     orgId={orgId}
@@ -871,6 +928,7 @@ export default function Home() {
                     projectId={projectId}
                     canWrite={canWrite}
                     sourceCount={sources.length}
+                    contentIntent={contentIntent}
                     goalText={goalText}
                     personal={personal}
                     isOwner={role === "owner"}
@@ -1219,7 +1277,7 @@ export default function Home() {
           </fieldset>
         )}
         <footer className="app-footer">
-          <span>© FounderOS</span>
+          <span>© Rymu · rymu.ai</span>
           <span>
             <Icon name="shield" size={14} /> Approval-based workflows · Your
             results, honestly measured.
