@@ -48,10 +48,10 @@ type Analytics = {
 export default function Home() {
   const [identity, setIdentity] = useState<Identity | null>(null),
     [booting, setBooting] = useState(true),
-    [register, setRegister] = useState(false);
+    [register, setRegister] = useState(true);
   const [email, setEmail] = useState(""),
-    [password, setPassword] = useState(""),
-    [organizationName, setOrganizationName] = useState("");
+    [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [orgId, setOrgId] = useState(""),
     [projects, setProjects] = useState<Project[]>([]),
     [projectId, setProjectId] = useState("");
@@ -186,22 +186,36 @@ export default function Home() {
     void run(action);
   }
   async function authenticate() {
-    await api(register ? "/auth/register" : "/auth/login", "", {
-      email,
-      password,
-      ...(register
-        ? { organization_name: organizationName, onboarding_mode: projectMode }
-        : {}),
-    });
+    try {
+      await api(register ? "/auth/register" : "/auth/login", "", {
+        email,
+        password,
+        ...(register ? { onboarding_mode: projectMode } : {}),
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "";
+      throw new Error(
+        message === "Account already exists"
+          ? "This email already has an account. Choose Sign in below."
+          : message === "Invalid email or password"
+            ? "That email and password don’t match. Please try again."
+            : message === "Failed to fetch"
+              ? "We couldn’t connect. Check your connection and try again."
+              : message || "We couldn’t create your account. Please try again.",
+      );
+    }
     const me = await api("/auth/me");
     setIdentity(me);
     setProjectMode(me.onboarding_mode || "business");
     setOrgId(me.organizations[0]?.id || "");
     setPassword("");
+    setShowPassword(false);
   }
   async function logout() {
     await api("/auth/logout", "", {});
     setIdentity(null);
+    setRegister(false);
+    setShowPassword(false);
     setOrgId("");
     setProjects([]);
     setProjectId("");
@@ -428,19 +442,15 @@ export default function Home() {
           {identity ? (
             "Your growth employee."
           ) : (
-            <>
-              Your AI-powered
-              <br />
-              growth team.
-            </>
+            <>{register ? "Your growth starts here." : "Welcome back."}</>
           )}
         </h1>
         <p className="intro" hidden={!!identity && !!projectId}>
           {identity
-            ? "Build your company. Give your employee direction, review its work and track paying customers."
+            ? "You’re in. Tell us a little about what you want to grow."
             : projectMode === "personal"
-              ? "Build your personal brand, grow a relevant audience and attract opportunities."
-              : "Build your founder brand and work toward your first 50 paying customers."}
+              ? "Share what you know. Reach people who care."
+              : "Get help with research and content. Keep control of what gets shared."}
         </p>
         {error && (
           <p className="error" role="alert">
@@ -455,15 +465,27 @@ export default function Home() {
         {booting ? (
           <p>Restoring your workspace…</p>
         ) : !identity ? (
-          <section className="panel auth">
-            <h2>{register ? "Create your workspace" : "Welcome back"}</h2>
+          <section className="panel auth simple-auth">
+            <span className="eyebrow">
+              {register ? "LET’S GET STARTED" : "WELCOME BACK"}
+            </span>
+            <h2>{register ? "Create your account" : "Sign in"}</h2>
+            <p className="auth-subtitle">
+              {register
+                ? "Just your email and a password. You can add the details later."
+                : "Pick up where you left off."}
+            </p>
             <form onSubmit={(e) => submit(e, authenticate)}>
               <fieldset disabled={busy}>
                 <label>
                   Email
                   <input
                     type="email"
+                    inputMode="email"
                     autoComplete="email"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    placeholder="you@example.com"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -471,61 +493,105 @@ export default function Home() {
                 </label>
                 <label>
                   Password
-                  <input
-                    type="password"
-                    autoComplete={
-                      register ? "new-password" : "current-password"
-                    }
-                    minLength={12}
-                    maxLength={128}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  <div className="password-control">
+                    <input
+                      aria-label="Password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete={
+                        register ? "new-password" : "current-password"
+                      }
+                      minLength={12}
+                      maxLength={128}
+                      required
+                      value={password}
+                      aria-describedby={register ? "password-hint" : undefined}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      aria-pressed={showPassword}
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
                 </label>
                 {register && (
-                  <label>
-                    What do you want to grow?
-                    <select
-                      aria-label="Signup growth goal"
-                      value={projectMode}
-                      onChange={(e) => setProjectMode(e.target.value)}
-                    >
-                      <option value="business">Grow my business</option>
-                      <option value="personal">Build my personal brand</option>
-                    </select>
-                  </label>
+                  <p id="password-hint" className="form-hint">
+                    Use at least 12 characters. A few words together work well.
+                  </p>
                 )}
                 {register && (
-                  <label>
-                    {projectMode === "personal"
-                      ? "Workspace name"
-                      : "Organization name"}
-                    <input
-                      minLength={2}
-                      maxLength={100}
-                      required
-                      value={organizationName}
-                      onChange={(e) => setOrganizationName(e.target.value)}
-                    />
-                  </label>
+                  <fieldset className="signup-choice">
+                    <legend>What would you like to grow?</legend>
+                    {[
+                      {
+                        value: "business",
+                        title: "My business",
+                        text: "Find customers for what I’m building.",
+                      },
+                      {
+                        value: "personal",
+                        title: "My personal brand",
+                        text: "Grow my audience and find opportunities.",
+                      },
+                    ].map((choice) => (
+                      <label
+                        key={choice.value}
+                        className={
+                          projectMode === choice.value ? "selected" : ""
+                        }
+                      >
+                        <input
+                          type="radio"
+                          name="signup-goal"
+                          aria-label={choice.title}
+                          value={choice.value}
+                          checked={projectMode === choice.value}
+                          onChange={() => setProjectMode(choice.value)}
+                        />
+                        <span>
+                          <strong>{choice.title}</strong>
+                          <small>{choice.text}</small>
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
                 )}
-                <button type="submit">
+                <button className="auth-primary" type="submit">
                   {busy
-                    ? "Please wait…"
+                    ? register
+                      ? "Creating your account…"
+                      : "Signing you in…"
                     : register
                       ? "Create account"
                       : "Sign in"}
+                  <Icon name="arrow" size={17} />
                 </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() => setRegister(!register)}
-                >
-                  {register ? "Use existing account" : "Create an account"}
-                </button>
+                <p className="auth-switch">
+                  {register ? "Already have an account?" : "New here?"}{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRegister(!register);
+                      setShowPassword(false);
+                      setError("");
+                    }}
+                  >
+                    {register ? "Sign in" : "Create an account"}
+                  </button>
+                </p>
               </fieldset>
             </form>
+            {register && (
+              <p className="auth-reassurance">
+                <Icon name="shield" size={15} />
+                You can connect your social accounts when you’re ready.
+              </p>
+            )}
           </section>
         ) : (
           <fieldset disabled={busy}>

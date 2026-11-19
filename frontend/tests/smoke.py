@@ -22,10 +22,22 @@ def main():
         page.on("pageerror", lambda e: errors.append(str(e)))
         email = f"browser-{uuid4().hex[:12]}@example.com"
         page.goto(os.getenv("FRONTEND_URL", "http://localhost:3000"))
-        page.get_by_role("button", name="Create an account", exact=True).click()
         page.get_by_label("Email", exact=True).fill(email)
         page.get_by_label("Password", exact=True).fill("browser-fixture-password")
-        page.get_by_label("Organization name").fill("Browser Test Workspace")
+        expect(
+            page.get_by_role("heading", name="Create your account", exact=True)
+        ).to_be_visible()
+        expect(
+            page.get_by_role("radio", name="My business", exact=True)
+        ).to_be_checked()
+        page.get_by_role("button", name="Show password", exact=True).click()
+        expect(page.get_by_label("Password", exact=True)).to_have_attribute(
+            "type", "text"
+        )
+        page.get_by_role("button", name="Hide password", exact=True).click()
+        expect(page.get_by_label("Password", exact=True)).to_have_attribute(
+            "type", "password"
+        )
         page.get_by_role("button", name="Create account", exact=True).click()
         page.get_by_label("Product name").fill("Browser Growth Test")
         page.get_by_label("Company problem", exact=True).fill(
@@ -399,11 +411,10 @@ def main():
         page.screenshot(path="/tmp/founderos-overview-mobile.png", full_page=True)
         page.get_by_role("button", name="Sign out", exact=True).click()
         page.get_by_role("button", name="Create an account", exact=True).click()
-        page.get_by_label("Signup growth goal", exact=True).select_option("personal")
+        page.get_by_role("radio", name="My personal brand", exact=True).check()
         creator_email = f"creator-{uuid4().hex[:12]}@example.com"
         page.get_by_label("Email", exact=True).fill(creator_email)
         page.get_by_label("Password", exact=True).fill("browser-fixture-password")
-        page.get_by_label("Workspace name", exact=True).fill("Ada personal brand")
         page.get_by_role("button", name="Create account", exact=True).click()
         expect(page.get_by_label("Workspace purpose", exact=True)).to_have_value(
             "personal"

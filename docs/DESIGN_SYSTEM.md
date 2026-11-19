@@ -15,3 +15,7 @@ The product uses a persistent navy sidebar, neutral workspace surfaces, restrain
 At 820px and below, the sidebar becomes a collapsible navigation area with an expanded-state button. It is not a modal and does not trap focus. Navigation buttons use their visible labels as accessible names and mark the active section. Switching sections scrolls the content to the top while preserving component/form state. Keyboard focus is visible, icons are decorative, and reduced-motion preferences disable transitions. Native progress elements accompany the decorative goal rings for assistive technology.
 
 The browser regression covers both business and personal-brand flows, mobile navigation, all four social demos, research confirmation, draft editing, interview capture teardown, customer/progress updates and routine persistence. Desktop and mobile screenshots are inspected for layout and overflow.
+
+## Simple signup
+
+New visitors enter an email and password, then choose My business or My personal brand. Workspace names are created automatically; company and brand details follow account creation. Password visibility is optional, the 12-character requirement remains, and returning users can switch to Sign in. No unavailable social sign-in buttons are displayed.

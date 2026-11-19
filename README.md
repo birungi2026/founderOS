@@ -104,8 +104,10 @@ Social account OAuth access for Instagram professional accounts and Facebook Pag
 
 The [guided founder workspace](docs/WORKSPACE.md) opens on an actionable Overview, with separate setup, accounts, employee work, routine and customer sections. Manual tools and administration are under Workspace settings.
 
-Signup supports **Grow my business** and **Build my personal brand**, with mode-specific onboarding and goal tracking. See [personal-brand workspaces](docs/PERSONAL_BRAND.md).
+Signup supports **My business** and **My personal brand**, with mode-specific onboarding and goal tracking. See [personal-brand workspaces](docs/PERSONAL_BRAND.md).
 
 Read connections now cover LinkedIn, Instagram, TikTok and Facebook with [provider-specific capabilities](docs/SOCIAL_ACCOUNTS.md). [Platform growth intelligence](docs/PLATFORM_INTELLIGENCE.md) adds source-backed ranking guidance and research experiments; private algorithms and unavailable analytics are not claimed.
 
 The dashboard now uses the [FounderOS product design system](docs/DESIGN_SYSTEM.md): persistent navigation, responsive mobile menu, consistent controls and status cards based on actual workspace data.
+
+See the [launch cost model and proposed subscriptions](docs/OPERATING_COSTS.md) for planning assumptions, including HeyGen API rendering costs. These are proposed prices, not implemented billing plans.
