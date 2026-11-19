@@ -1,6 +1,6 @@
 # Platform growth intelligence
 
-Research & content contains **Platform growth intelligence**, with source-linked guidance for Instagram, TikTok, Facebook and LinkedIn, proposed experiments and metric limitations. This is public knowledge and test design, not reverse engineering private ranking models or a guarantee of virality.
+Content studio contains **Platform growth intelligence**, with source-linked guidance for Instagram, TikTok, Facebook and LinkedIn, proposed experiments and metric limitations. This is public knowledge and test design, not reverse engineering private ranking models or a guarantee of virality.
 
 The initial catalog cites official Meta, TikTok and LinkedIn publications, with explicit curated review dates and versioned source IDs. It does not claim those pages were fetched live. Account summaries report actual saved retrieval timestamps and available counts; ungranted follower totals, retention, shares-per-reach and professional analytics remain unknown. Refresh platform evidence reloads saved account snapshots, not live social metrics. Account retrieval is a separate owner action.
 

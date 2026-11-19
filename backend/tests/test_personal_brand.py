@@ -1,3 +1,4 @@
+import pytest
 from conftest import project, register
 from sqlalchemy import select
 
@@ -136,3 +137,21 @@ def test_personal_automatic_research_does_not_require_company_problem(
         assert run.context["customer_pipeline"] is None
         payload, _, _ = run_agent("launch", run.context, {})
         assert payload["tasks"] == []
+
+
+@pytest.mark.parametrize(
+    "mode,name", [("business", "My business"), ("personal", "My personal brand")]
+)
+def test_signup_needs_no_organization_name(client, mode, name):
+    response = client.post(
+        "/auth/register",
+        json={
+            "email": f"{mode}-simple@example.com",
+            "password": "a-long-simple-password",
+            "onboarding_mode": mode,
+        },
+    )
+    assert response.status_code == 201, response.text
+    identity = client.get("/auth/me").json()
+    assert identity["onboarding_mode"] == mode
+    assert identity["organizations"][0]["name"] == name

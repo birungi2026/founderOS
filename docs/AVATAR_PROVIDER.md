@@ -24,7 +24,7 @@ Use the founder's authorized likeness and voice with explicit, revocable consent
 
 ## FounderOS placeholder onboarding
 
-Company & founder now contains a five-step **HeyGen demo**: guided interview, reviewed notes/delivery preferences, simulated consent, provider setup and placeholder sample approval. Founders can record up to three minutes in supported browsers, upload a video up to 100 MB or use fictional sample notes. Camera capture requires localhost or HTTPS and browser permission.
+Brand profile (Your brand for personal workspaces) now contains a five-step **HeyGen demo**: guided interview, reviewed notes/delivery preferences, simulated consent, provider setup and placeholder sample approval. Founders can record up to three minutes in supported browsers, upload a video up to 100 MB or use fictional sample notes. Camera capture requires localhost or HTTPS and browser permission.
 
 Recordings use browser memory/object URLs only; they are not uploaded, transcribed, saved to the account or sent to a provider. Capture stops when leaving the section; switching company/reloading or deleting the demo removes the local preview. Notes and demo consent do not modify approved founder memory or create a legally verified consent record. The sample is a labeled storyboard placeholder, not synthetic footage or cloned audio. Approval completes only the demo and never activates content generation or publishing.
 

@@ -142,7 +142,7 @@ class Credentials(BaseModel):
 
 class Registration(Credentials):
     onboarding_mode: Literal["business", "personal"] = "business"
-    organization_name: str = Field(min_length=2, max_length=100)
+    organization_name: str | None = Field(default=None, min_length=2, max_length=100)
 
 
 class ProjectInput(BaseModel):
@@ -270,7 +270,10 @@ def register(data: Registration, response: Response, db: Session = Depends(get_d
         password_hash=hash_password(data.password),
         onboarding_mode=data.onboarding_mode,
     )
-    org = Organization(name=data.organization_name)
+    org = Organization(
+        name=data.organization_name
+        or ("My personal brand" if data.onboarding_mode == "personal" else "My business")
+    )
     db.add_all([user, org])
     try:
         db.flush()

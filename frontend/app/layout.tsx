@@ -1,4 +1,5 @@
 import "./style.css";
+import "./professional.css";
 export const metadata = {
   title: "FounderOS",
   description: "The AI Growth Employee for Founders",
