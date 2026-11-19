@@ -11,6 +11,6 @@ Navigation separates:
 5. Customers: purchase progress and lead next actions. Counts remain founder-confirmed.
 6. Advanced tools: manual evidence, standalone plan/draft generators, manual results, export and organization access/audit. Creating another company also lives here once a company is selected.
 
-Switching sections preserves in-progress form and draft state. Reloading returns to Overview and loads saved server data. New founders see company creation before the workspace. Existing tenant roles and approval/publishing rules remain enforced. Upcoming interview capture, rendered avatars and unattended social publishing are labeled as upcoming, not shown as completed setup steps.
+Switching sections preserves in-progress form and draft state. Reloading returns to Overview and loads saved server data. New founders see company creation before the workspace. Existing tenant roles and approval/publishing rules remain enforced. A local interview recorder and HeyGen onboarding preview are available under Company & founder. They are clearly labeled as a demo: live interview processing, rendered avatars and unattended social publishing remain upcoming and do not appear as completed capabilities.
 
 The browser smoke test covers navigation, hidden manual fields on Overview, both connection demos, saved founder approval, research confirmation/resumption, revision editing, lead purchase confirmation, routine persistence and mobile overflow.
