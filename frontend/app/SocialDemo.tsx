@@ -8,7 +8,12 @@ export default function SocialDemo() {
   const [accounts, setAccounts] = useState<DemoAccount[]>([]);
   const [notice, setNotice] = useState("");
   const label = (provider: string) =>
-    provider === "instagram" ? "Instagram" : "Facebook Pages";
+    ({
+      instagram: "Instagram",
+      facebook: "Facebook Pages",
+      linkedin: "LinkedIn",
+      tiktok: "TikTok",
+    })[provider as "instagram" | "facebook" | "linkedin" | "tiktok"];
   return (
     <div className="social-demo">
       <button
@@ -25,12 +30,12 @@ export default function SocialDemo() {
           <h3>Demo mode · sample data only</h3>
           <p>
             Preview connecting, granting access, retrieving posts and
-            disconnecting. No Meta credentials are needed. This preview never
-            contacts social platforms, publishes content or adds sample metrics
-            to your real growth workflows.
+            disconnecting. No provider credentials are needed. This preview
+            never contacts social platforms, publishes content or adds sample
+            metrics to your real growth workflows.
           </p>
           {notice && <p role="status">{notice}</p>}
-          {["instagram", "facebook"].map((provider) => (
+          {["instagram", "facebook", "linkedin", "tiktok"].map((provider) => (
             <button
               type="button"
               key={provider}
@@ -62,8 +67,16 @@ export default function SocialDemo() {
                   : "Demo Founder Company"}
               </p>
               <ul>
-                <li>Read account profile and follower totals</li>
-                <li>Read recent posts</li>
+                <li>
+                  {pending === "linkedin"
+                    ? "Read basic profile; post analytics requires additional approval"
+                    : "Read profile and available account data"}
+                </li>
+                <li>
+                  {pending === "linkedin"
+                    ? "No post or follower analytics with basic profile access"
+                    : "Read recent public content"}
+                </li>
                 <li>No publishing or messaging access</li>
               </ul>
               <button
@@ -139,17 +152,27 @@ export default function SocialDemo() {
               {account.retrieved && (
                 <div>
                   <p>
-                    <strong>Sample followers:</strong> 1,240 ·{" "}
-                    <strong>Sample recent posts:</strong> 2
+                    <strong>Sample followers:</strong>{" "}
+                    {account.provider === "linkedin" ||
+                    account.provider === "tiktok"
+                      ? "Unavailable with requested scopes"
+                      : "1,240"}{" "}
+                    · <strong>Sample recent posts:</strong>{" "}
+                    {account.provider === "linkedin" ? 0 : 2}
                   </p>
-                  <h4>Example posts</h4>
-                  <p>
-                    “Why I started this company: the problem our first customers
-                    helped us understand.”
-                  </p>
-                  <p>
-                    “Three lessons from building our first product prototype.”
-                  </p>
+                  {account.provider !== "linkedin" && (
+                    <>
+                      <h4>Example posts</h4>
+                      <p>
+                        “Why I started this company: the problem our first
+                        customers helped us understand.”
+                      </p>
+                      <p>
+                        “Three lessons from building our first product
+                        prototype.”
+                      </p>
+                    </>
+                  )}
                   <p>
                     <strong>Next in the live workflow:</strong> retrieved
                     account data informs research and content drafts. Founder

@@ -114,7 +114,7 @@ def test_automatic_research_needs_no_manual_source(client, database, monkeypatch
     assert worker.process_one(database)
     run = client.get(f"/v1/workflows/{rid}").json()
     assert run["status"] == "needs_review"
-    assert len(requests) == 7
+    assert len(requests) == 11
     assert len(run["sources"]) == 1
     assert run["sources"][0]["verification"] == "search_result_unverified"
     assert run["sources"][0]["title"] == "Buyer research"

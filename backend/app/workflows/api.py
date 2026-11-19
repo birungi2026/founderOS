@@ -298,11 +298,13 @@ def queue_workflow(
         mode == "llm" and (not os.getenv("LLM_API_KEY") or not os.getenv("LLM_MODEL"))
     ):
         raise HTTPException(503, "Generation provider is not configured")
+    from ..platforms import guidance_snapshot
     from .customers import funnel
 
     snapshot = {
         **data.model_dump(mode="json"),
         "brand": brand.data,
+        "platform_guidance": guidance_snapshot(db, project_id),
         "company": company,
         "requires_research_confirmation": data.research_mode == "automatic"
         or any(s.provider != "manual" for s in sources),
@@ -400,6 +402,7 @@ def get_workflow(run_id: str, context: Tenant = Depends(tenant), db: Session = D
             {
                 "sources": run.context["sources"],
                 "company": run.context.get("company"),
+                "platform_guidance": run.context.get("platform_guidance", []),
                 "artifact": research_step.artifact,
             }
         )
@@ -409,6 +412,7 @@ def get_workflow(run_id: str, context: Tenant = Depends(tenant), db: Session = D
     return {
         **run_dict(run),
         "company": run.context.get("company"),
+        "platform_guidance": run.context.get("platform_guidance", []),
         "research_only": run.context.get("research_only", False),
         "research_review_hash": review_hash,
         "research_confirmed": bool(run.context.get("research_confirmation")),
@@ -598,6 +602,7 @@ def confirm_research(
         {
             "sources": run.context["sources"],
             "company": run.context.get("company"),
+            "platform_guidance": run.context.get("platform_guidance", []),
             "artifact": step.artifact,
         }
     )

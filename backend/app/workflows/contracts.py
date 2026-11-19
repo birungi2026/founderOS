@@ -56,7 +56,17 @@ class CompetitorFinding(StrictModel):
     uncertainty: Text
 
 
+class PlatformStrategy(StrictModel):
+    platform: Literal["instagram", "tiktok", "facebook", "linkedin"]
+    ranking_summary: Text
+    experiment: Text
+    success_metric: Text
+    evidence_ids: list[str] = Field(min_length=1, max_length=10)
+    uncertainty: Text
+
+
 class ResearchArtifact(StrictModel):
+    platform_strategies: list[PlatformStrategy] = Field(default_factory=list, max_length=4)
     opportunities: list[Opportunity] = Field(min_length=1, max_length=5)
     prospects: list[ProspectCandidate] = Field(default_factory=list, max_length=5)
     company_understanding: str = Field(default="", max_length=2000)

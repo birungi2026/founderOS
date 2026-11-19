@@ -84,6 +84,14 @@ def discover(ctx):
             None,
         )
     )
+    # Four bounded searches for public platform guidance, in addition to niche trends.
+    for platform, domain in [
+        ("Instagram", "about.fb.com"),
+        ("TikTok", "support.tiktok.com"),
+        ("Facebook", "about.fb.com"),
+        ("LinkedIn", "news.linkedin.com"),
+    ]:
+        queries.append((f"site:{domain} {platform} ranking recommendations creators updates", "pw"))
     results, seen = [], set()
     with httpx.Client(timeout=20, follow_redirects=False) as client:
         for query, freshness in queries:
@@ -111,7 +119,7 @@ def discover(ctx):
                 break
     if not results:
         raise ValueError("research_no_results")
-    return results[:10]
+    return results[:14]
 
 
 def save_discovered(db, project_id, user_id, items):

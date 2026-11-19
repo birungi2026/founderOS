@@ -9,6 +9,7 @@ type Account = {
   status: string;
   permissions: string[];
   snapshot: {
+    limitations?: string;
     observed_at?: number;
     profile?: { followers_count?: number };
     posts?: unknown[];
@@ -28,6 +29,20 @@ export default function SocialAccounts({
   projectId: string;
   isOwner: boolean;
 }) {
+  const names: Record<string, string> = {
+    instagram: "Instagram",
+    facebook: "Facebook Pages",
+    linkedin: "LinkedIn",
+    tiktok: "TikTok",
+  };
+  const descriptions: Record<string, string> = {
+    instagram: "Professional profile and recent media",
+    facebook: "Authorized Pages and recent posts",
+    linkedin:
+      "Basic profile only; posts and analytics need additional LinkedIn approval",
+    tiktok:
+      "Basic profile and recent public videos; follower totals and retention require additional access",
+  };
   const [accounts, setAccounts] = useState<Account[]>([]),
     [providers, setProviders] = useState<Provider[]>([]),
     [message, setMessage] = useState(""),
@@ -56,20 +71,21 @@ export default function SocialAccounts({
       <span className="eyebrow">CONNECTED SOCIAL ACCOUNTS</span>
       <h2>Give your growth employee account access.</h2>
       <p>
-        Connect an Instagram Business or Creator account, or Facebook Pages.
-        Access currently reads your profile and recent posts to inform growth
-        workflows. Publishing and messaging are separate integrations.
+        Connect LinkedIn, Instagram, TikTok or Facebook Pages using official
+        account authorization. Available data depends on the permissions
+        granted. Publishing and messaging remain separate integrations.
       </p>
       <SocialDemo />
       {message && <p role="status">{message}</p>}
       {providers.map((p) => (
         <div key={p.provider}>
-          <h3>{p.provider === "instagram" ? "Instagram" : "Facebook Pages"}</h3>
+          <h3>{names[p.provider] || p.provider}</h3>
           <p>
             {p.configured
               ? "Ready to connect"
-              : "Requires administrator setup of the Meta app and token encryption."}
+              : "Requires administrator setup of this provider app and token encryption."}
           </p>
+          <p>{descriptions[p.provider]}</p>
           <p>Requested permissions: {p.requested_permissions.join(", ")}</p>
           {isOwner && (
             <button
@@ -100,9 +116,10 @@ export default function SocialAccounts({
       {accounts.map((a) => (
         <article key={a.id}>
           <h3>
-            {a.name} · {a.provider}
+            {a.name} · {names[a.provider] || a.provider}
           </h3>
           <p>Status: {a.status}</p>
+          <p>{a.snapshot.limitations || descriptions[a.provider]}</p>
           <p>Granted permissions: {a.permissions.join(", ") || "None"}</p>
           {a.snapshot.observed_at && (
             <p>

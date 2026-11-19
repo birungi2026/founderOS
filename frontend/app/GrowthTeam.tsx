@@ -21,6 +21,14 @@ type Brand = {
   created_at: string;
 };
 type Research = {
+  platform_strategies?: {
+    platform: string;
+    ranking_summary: string;
+    experiment: string;
+    success_metric: string;
+    evidence_ids: string[];
+    uncertainty: string;
+  }[];
   company_understanding?: string;
   differentiation_hypothesis?: string;
   competitor_observations?: {
@@ -79,6 +87,11 @@ type Run = {
   };
   brand_version?: number;
   steps?: Step[];
+  platform_guidance?: {
+    source_id: string;
+    source_url: string;
+    curated_reviewed_on: string;
+  }[];
   sources?: {
     id: string;
     title: string;
@@ -1026,6 +1039,39 @@ export default function GrowthTeam({
                       )}
                     </article>
                   ))}
+                  {!!research.platform_strategies?.length && (
+                    <section aria-label="Platform research recommendations">
+                      <h3>Platform-specific experiments</h3>
+                      {research.platform_strategies.map((strategy) => (
+                        <article key={strategy.platform}>
+                          <h4>{strategy.platform}</h4>
+                          <p>{strategy.ranking_summary}</p>
+                          <p>
+                            <strong>Test:</strong> {strategy.experiment}
+                          </p>
+                          <p>
+                            <strong>Measure:</strong> {strategy.success_metric}
+                          </p>
+                          <small>{strategy.uncertainty}</small>
+                          {strategy.evidence_ids.map((id) => {
+                            const url =
+                              run.platform_guidance?.find(
+                                (g) => g.source_id === id,
+                              )?.source_url ||
+                              run.sources?.find((source) => source.id === id)
+                                ?.url;
+                            return url ? (
+                              <p key={id}>
+                                <a href={url} target="_blank" rel="noreferrer">
+                                  Platform evidence
+                                </a>
+                              </p>
+                            ) : null;
+                          })}
+                        </article>
+                      ))}
+                    </section>
+                  )}
                   {research.opportunities.map((o, i) => (
                     <article key={i}>
                       <h3>{o.angle}</h3>
