@@ -33,3 +33,5 @@ The unit/integration suite uses provider mocks. A passing suite does not establi
 ## Rymu domain
 
 For the intended production domain `rymu.ai`, a same-site API deployment can use `https://api.rymu.ai`: build with `NEXT_PUBLIC_API_URL=https://api.rymu.ai`, set `FRONTEND_ORIGINS=https://rymu.ai` (include `https://www.rymu.ai` only if it also serves the frontend), and set `COOKIE_SECURE=true`. Point the corresponding Namecheap DNS records at the DigitalOcean deployment and provision HTTPS for both hostnames before testing OAuth. Register callback URLs matching the existing backend routes. This documentation and app metadata do not create DNS records or certificates. Existing local Compose names and secrets remain unchanged.
+
+For the connected interview → Facebook video path, follow [Growth journey provisioning](GROWTH_JOURNEY.md). Both API and worker require the shared private media volume, the same signing key, provider configuration and an explicitly provisioned organization. Publishing remains disabled until the server flag, Page permissions and an owner approval are present.

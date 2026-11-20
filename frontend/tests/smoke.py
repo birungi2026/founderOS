@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from uuid import uuid4
 
+from journey_flow import journey_flow
 from playwright.sync_api import expect, sync_playwright
 
 
@@ -74,6 +75,7 @@ def main():
             }
             nav.get_by_role("button", name=labels.get(name, name), exact=True).click()
 
+        journey_flow(page, page.get_by_label("Saved project").input_value())
         section("2. Social accounts")
         page.get_by_role("button", name="Try demo connection flow", exact=True).click()
         demo = page.get_by_role("region", name="Social connection demo", exact=True)

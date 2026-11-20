@@ -113,3 +113,5 @@ The dashboard now uses the [FounderOS product design system](docs/DESIGN_SYSTEM.
 See the [launch cost model and proposed subscriptions](docs/OPERATING_COSTS.md) for planning assumptions, including HeyGen API rendering costs. These are proposed prices, not implemented billing plans.
 
 The product identity is now **Rymu** at the intended domain **rymu.ai**, using the selected indigo/coral mark and a phone-first content studio. See the [updated design system](docs/DESIGN_SYSTEM.md). Legacy repository, service and configuration identifiers remain compatible.
+
+The [connected growth journey](docs/GROWTH_JOURNEY.md) adds interview transcription, reviewed brand/research, Tavus video generation, approved Facebook Page scheduling and observed engagement. It requires explicitly provisioned provider access; automated tests use provider fixtures, and live credentials are never embedded in the frontend.

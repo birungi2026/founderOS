@@ -45,7 +45,19 @@ services:
       TIKTOK_REDIRECT_URI: ${TIKTOK_REDIRECT_URI:-}
       META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v25.0}
       BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY:-}
+      TRANSCRIPTION_API_KEY: ${TRANSCRIPTION_API_KEY:-}
+      TRANSCRIPTION_MODEL: ${TRANSCRIPTION_MODEL:-gpt-4o-mini-transcribe}
+      TAVUS_API_KEY: ${TAVUS_API_KEY:-}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-}
+      JOURNEY_MEDIA_SIGNING_KEY: ${JOURNEY_MEDIA_SIGNING_KEY:-}
+      JOURNEY_MEDIA_DIR: /app/media
+      JOURNEY_ENABLED_ORGANIZATIONS: ${JOURNEY_ENABLED_ORGANIZATIONS:-}
+      JOURNEY_PUBLISHING_ENABLED: ${JOURNEY_PUBLISHING_ENABLED:-false}
+      JOURNEY_MONTHLY_INTERVIEW_LIMIT: ${JOURNEY_MONTHLY_INTERVIEW_LIMIT:-30}
+      JOURNEY_MONTHLY_TRAINING_LIMIT: ${JOURNEY_MONTHLY_TRAINING_LIMIT:-1}
+      JOURNEY_MONTHLY_RENDER_LIMIT: ${JOURNEY_MONTHLY_RENDER_LIMIT:-10}
       WORKFLOW_MONTHLY_RUN_LIMIT: ${WORKFLOW_MONTHLY_RUN_LIMIT:-40}
+    volumes: ["journey-media:/app/media"]
     ports: ["127.0.0.1:${API_PORT:-8000}:8000"]
     depends_on:
       migrate:
@@ -54,6 +66,7 @@ services:
     build: ./backend
     command: ["python", "-m", "app.workflows.worker"]
     environment: *backend-environment
+    volumes: ["journey-media:/app/media"]
     restart: unless-stopped
     depends_on:
       migrate:
@@ -67,3 +80,4 @@ services:
     depends_on: [api]
 volumes:
   postgres-data:
+  journey-media:

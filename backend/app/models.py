@@ -259,3 +259,18 @@ class SocialAccount(Base):
     expires_at: Mapped[float]
     status: Mapped[str] = mapped_column(String(30), default="connected")
     snapshot: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+class GrowthJourney(Base):
+    __tablename__ = "growth_journeys"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
+    requested_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    status: Mapped[str] = mapped_column(String(40), default="interview_uploaded")
+    revision: Mapped[int] = mapped_column(default=1)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)
+    claim_token: Mapped[str | None] = mapped_column(String(36))
+    lease_until: Mapped[float] = mapped_column(default=0)
+    next_check: Mapped[float] = mapped_column(default=0)
+    error_code: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[str] = mapped_column(String(40), default=now)

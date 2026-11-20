@@ -73,7 +73,9 @@ export default function SocialAccounts({
       <p>
         Connect LinkedIn, Instagram, TikTok or Facebook Pages using official
         account authorization. Available data depends on the permissions
-        granted. Publishing and messaging remain separate integrations.
+        granted. Approved Facebook Page video posting is available in Your
+        growth journey when enabled. Other publishing and messaging are not
+        connected here.
       </p>
       <SocialDemo />
       {message && <p role="status">{message}</p>}

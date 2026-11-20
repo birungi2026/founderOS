@@ -5,6 +5,7 @@ import { goalLabels } from "./PersonalProgress";
 import Icon from "./Icon";
 import CreationChoices from "./CreationChoices";
 export type WorkspaceView =
+  | "journey"
   | "overview"
   | "profile"
   | "accounts"
@@ -14,6 +15,7 @@ export type WorkspaceView =
   | "settings";
 export const workspaceViews: [WorkspaceView, string][] = [
   ["overview", "Overview"],
+  ["journey", "Your growth journey"],
   ["profile", "1. Company & founder"],
   ["accounts", "2. Social accounts"],
   ["content", "3. Research & content"],
@@ -534,8 +536,10 @@ export default function EmployeeOverview({
         <p>
           Research, confirmation, drafts, social account connections and goal
           tracking are available. Interview capture and avatar onboarding
-          include a labeled demo. Live interview processing, rendered avatar
-          videos and automatic social publishing remain upcoming.
+          include a labeled demo. Use Your growth journey for provider-backed
+          interview processing, Tavus videos and approved Facebook Page
+          scheduling. Administrator setup is required; other-channel publishing
+          remains separate.
         </p>
       </details>
     </div>

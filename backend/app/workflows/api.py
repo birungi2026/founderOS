@@ -16,6 +16,7 @@ from ..models import (
     ContentRevision,
     Draft,
     GrowthEvent,
+    GrowthJourney,
     LaunchTask,
     Metric,
     Project,
@@ -211,6 +212,22 @@ def performance_snapshot(db, project_id):
     return {
         "totals": totals,
         "channels": channels,
+        "published_content": [
+            {
+                "journey_id": row.id,
+                "channel": "facebook",
+                "caption": row.data.get("publication", {}).get("caption", "")[:400],
+                "observed_at": row.data.get("observed_at"),
+                "engagement": row.data.get("results", {}).get("metrics", {}),
+                "note": "Observed engagement, not leads, purchases or causal attribution.",
+            }
+            for row in db.scalars(
+                select(GrowthJourney)
+                .where(GrowthJourney.project_id == project_id, GrowthJourney.status == "measured")
+                .order_by(GrowthJourney.created_at.desc())
+                .limit(5)
+            )
+        ],
         "note": "Observed cumulative counts, not causal attribution or forecasts.",
     }
 

@@ -1,4 +1,4 @@
-"""Durable SQL-backed MVP worker. One claim, bounded agent calls, no automatic publishing."""
+"""Durable research workflows and explicitly approved scheduled growth journeys."""
 
 import argparse
 import logging
@@ -262,16 +262,22 @@ def process_one(factory=SessionLocal):
 
 def main():
     parser = argparse.ArgumentParser(description="Run the FounderOS growth workflow worker")
-    parser.add_argument("--once", action="store_true", help="Process at most one queued job")
+    parser.add_argument(
+        "--once", action="store_true", help="Process one workflow and one journey step"
+    )
     args = parser.parse_args()
+    from ..journey.worker import process_one as process_journey
+    from .schedules import schedule_one
+
     if args.once:
         process_one()
+        process_journey()
         return
-    from .schedules import schedule_one
 
     while True:
         schedule_one()
-        if not process_one():
+        worked = process_journey()
+        if not process_one() and not worked:
             time.sleep(2)
 
 

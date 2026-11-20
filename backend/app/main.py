@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from .database import get_db
 from .generation import generate
+from .journey.api import router as journey_router
 from .models import (
     AuditLog,
     Draft,
@@ -62,6 +63,7 @@ if not logger.handlers:
 logger.propagate = False
 
 app = FastAPI(title="FounderOS API", version="0.3.0")
+app.include_router(journey_router)
 app.include_router(workflow_router)
 app.include_router(social_router)
 app.include_router(platforms_router)

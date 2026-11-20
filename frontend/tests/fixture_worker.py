@@ -8,7 +8,7 @@ if os.getenv("FOUNDEROS_TEST_RESEARCH") != "1":
     raise RuntimeError("This fixture may only run in an explicit test environment")
 os.environ["GENERATION_MODE"] = "template"
 
-from app.workflows import research, worker  # noqa: E402
+from app.workflows import research, worker
 
 real_client = httpx.Client
 
