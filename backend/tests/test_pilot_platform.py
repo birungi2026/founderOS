@@ -504,3 +504,14 @@ def test_subscription_alone_cannot_enable_avatar_setup(client, database, monkeyp
         == 403
     )
     assert not client.get(root + "/journeys").json()["capabilities"]["training"]
+
+
+def test_long_scheduler_reservation_keys_are_bounded_and_idempotent(client, database):
+    org, _, _ = setup(client)
+    with database() as db:
+        key = "workflow-" + org + "-daily:" + "x" * 100
+        billing.reserve(db, org, "research_runs", 1, key)
+        billing.reserve(db, org, "research_runs", 1, key)
+        db.commit()
+        rows = db.scalars(select(ResourceUsage).where(ResourceUsage.organization_id == org)).all()
+        assert len(rows) == 1 and len(rows[0].resource_key) <= 100

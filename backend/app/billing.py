@@ -35,6 +35,8 @@ def active(db, organization_id):
 
 
 def reserve(db, organization_id, kind, units, resource_key):
+    # Provider/scheduler idempotency keys can exceed PostgreSQL's bounded column.
+    resource_key = hashlib.sha256(f"{organization_id}:{kind}:{resource_key}".encode()).hexdigest()
     active(db, organization_id)
     db.refresh(db.get(Organization, organization_id), with_for_update=True)
     if db.scalar(select(ResourceUsage).where(ResourceUsage.resource_key == resource_key)):
