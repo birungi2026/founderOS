@@ -153,6 +153,13 @@ def main():
         interview = page.get_by_role(
             "region", name="Founder video interview", exact=True
         )
+        page.evaluate("""() => {
+          window.__savedCamera = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+          navigator.mediaDevices.getUserMedia = async () => { throw new DOMException('Busy', 'NotReadableError'); };
+        }""")
+        interview.get_by_role("button", name="Record founder interview", exact=True).click()
+        expect(interview.get_by_role("alert")).to_contain_text("Close other camera apps or tabs")
+        page.evaluate("navigator.mediaDevices.getUserMedia = window.__savedCamera")
         interview.get_by_role(
             "button", name="Record founder interview", exact=True
         ).click()
@@ -534,7 +541,7 @@ def main():
         )
         expect(page.get_by_label("Company problem", exact=True)).not_to_be_visible()
         page.get_by_label("Your name or brand", exact=True).fill("Ada Teaches")
-        page.get_by_label("Your niche and expertise", exact=True).fill(
+        page.get_by_label("What would you like to post about?", exact=True).fill(
             "Practical software engineering and mentoring lessons."
         )
         page.get_by_label("Who do you want to reach?", exact=True).fill(
@@ -551,6 +558,18 @@ def main():
             )
         ).to_be_visible()
         expect(page.get_by_text("PAYING CUSTOMERS", exact=True)).not_to_be_visible()
+        section("1. You & your brand")
+        profile = page.locator(".brand-studio")
+        expect(page.get_by_label("Problem your company solves", exact=True)).not_to_be_visible()
+        expect(page.get_by_label("Competitor websites", exact=True)).not_to_be_visible()
+        expect(profile.get_by_label("What do you know well?", exact=True)).not_to_be_visible()
+        profile.get_by_label("Your name", exact=True).fill("Ada Learns")
+        profile.get_by_label("Your story", exact=True).fill("I enjoy learning new skills and sharing everyday lessons with others.")
+        profile.get_by_label("What topics should Rymu post about?", exact=True).fill("Learning to cook\nEveryday fitness")
+        profile.get_by_label("How should Rymu write your posts?", exact=True).fill("Friendly and simple")
+        profile.get_by_label("Who would enjoy your posts?", exact=True).fill("People trying new hobbies")
+        profile.get_by_role("button", name="Save brand version", exact=True).click()
+        expect(profile.get_by_text("Brand version saved.", exact=False)).to_be_visible()
         section("Audience & opportunities")
         page.get_by_label("Current total (self-reported)", exact=True).fill("75")
         page.get_by_role(

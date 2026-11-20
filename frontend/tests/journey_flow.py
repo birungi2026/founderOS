@@ -177,6 +177,13 @@ def journey_flow(page, project_id):
             )
         ).to_be_disabled()
         page.evaluate("""() => {
+          window.__originalCamera = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+          navigator.mediaDevices.getUserMedia = async () => { throw new DOMException('Denied', 'NotAllowedError'); };
+        }""")
+        region.get_by_role("button", name="Record my interview", exact=True).click()
+        expect(region.get_by_role("alert")).to_contain_text("Allow camera and microphone access")
+        page.evaluate("navigator.mediaDevices.getUserMedia = window.__originalCamera")
+        page.evaluate("""() => {
           window.__journeyTracks = [];
           const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
           navigator.mediaDevices.getUserMedia = async (...args) => {

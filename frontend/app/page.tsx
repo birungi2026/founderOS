@@ -90,6 +90,7 @@ export default function Home() {
   const [pipelineRefresh, setPipelineRefresh] = useState(0);
   const [view, setView] = useState<WorkspaceView>("overview");
   const [navOpen, setNavOpen] = useState(false);
+  const [personalInterviewOpen, setPersonalInterviewOpen] = useState(false);
   const [contentIntent, setContentIntent] = useState<{
     tab: string;
     request: number;
@@ -696,7 +697,7 @@ export default function Home() {
                   )}
                   <label>
                     {projectMode === "personal"
-                      ? "Your niche and expertise"
+                      ? "What would you like to post about?"
                       : "What does it do?"}
                     <textarea
                       required
@@ -826,6 +827,7 @@ export default function Home() {
                       orgId={orgId}
                       projectId={projectId}
                       isOwner={role === "owner"}
+                      personal={personal}
                     />
                   </details>
                 )}
@@ -916,19 +918,36 @@ export default function Home() {
                   />
                 )}
                 <div hidden={view !== "profile"}>
-                  <FounderInterview
-                    key={"interview" + orgId + projectId}
-                    canWrite={canWrite}
-                    active={view === "profile"}
-                    personal={personal}
-                  />
-                  <CompanyBrief
-                    personal={personal}
-                    key={"company" + orgId + projectId}
-                    orgId={orgId}
-                    projectId={projectId}
-                    canWrite={canWrite}
-                  />
+                  {personal ? (
+                    <details
+                      className="panel"
+                      onToggle={(e) =>
+                        setPersonalInterviewOpen(e.currentTarget.open)
+                      }
+                    >
+                      <summary>Try an interview (optional demo)</summary>
+                      <FounderInterview
+                        key={"interview" + orgId + projectId}
+                        canWrite={canWrite}
+                        active={view === "profile" && personalInterviewOpen}
+                        personal
+                      />
+                    </details>
+                  ) : (
+                    <>
+                      <FounderInterview
+                        key={"interview" + orgId + projectId}
+                        canWrite={canWrite}
+                        active={view === "profile"}
+                      />
+                      <CompanyBrief
+                        key={"company" + orgId + projectId}
+                        orgId={orgId}
+                        projectId={projectId}
+                        canWrite={canWrite}
+                      />
+                    </>
+                  )}
                 </div>
                 <div hidden={view !== "content"}>
                   <CreationChoices onChoose={openStudio} compact />

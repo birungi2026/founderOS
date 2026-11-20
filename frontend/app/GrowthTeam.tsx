@@ -446,7 +446,9 @@ export default function GrowthTeam({
     await action(async () => {
       await api(`/v1/projects/${projectId}/brand`, orgId, {
         ...form,
-        expertise: lines(form.expertise.join("\n")),
+        expertise: lines(
+          (personal ? form.content_pillars : form.expertise).join("\n"),
+        ),
         content_pillars: lines(form.content_pillars.join("\n")),
         proof_points: lines(form.proof_points.join("\n")),
         avoid_topics: lines(form.avoid_topics.join("\n")),
@@ -525,7 +527,7 @@ export default function GrowthTeam({
         <span className="eyebrow">PERSONAL BRAND STUDIO</span>
         <h2>
           {personal
-            ? "Teach your employee your story and voice."
+            ? "Tell us about you."
             : "Teach your growth team who you are."}
         </h2>
         <p>
@@ -566,7 +568,7 @@ export default function GrowthTeam({
                   }
                 />
               </label>
-              <label>
+              <label hidden={personal}>
                 {personal
                   ? "Your website (optional)"
                   : "Product website (optional)"}
@@ -585,18 +587,22 @@ export default function GrowthTeam({
                 required
                 minLength={20}
                 maxLength={4000}
-                placeholder="Why did you start? What have you personally learned?"
+                placeholder={
+                  personal
+                    ? "Your interests, experiences and what you enjoy sharing."
+                    : "Why did you start? What have you personally learned?"
+                }
                 aria-label={personal ? "Your story" : "Your founder story"}
                 value={form.story}
                 onChange={(e) => setForm({ ...form, story: e.target.value })}
               />
             </label>
             <div className="grid">
-              <div>
+              <div hidden={personal}>
                 <label>
                   What do you know well?
                   <textarea
-                    required
+                    required={!personal}
                     aria-label="What do you know well?"
                     aria-describedby="brand-skills-help"
                     placeholder={
@@ -637,7 +643,9 @@ export default function GrowthTeam({
                     aria-label="What topics should Rymu post about?"
                     aria-describedby="brand-topics-help"
                     placeholder={
-                      "For example:\nSimple security tips\nLessons from building a business"
+                      personal
+                        ? "For example:\nEveryday fitness\nBooks I love\nLearning to cook"
+                        : "For example:\nSimple security tips\nLessons from building a business"
                     }
                     value={form.content_pillars.join("\n")}
                     onChange={(e) =>
@@ -690,13 +698,23 @@ export default function GrowthTeam({
               onUse={(answer) => setForm({ ...form, voice: answer })}
             />
             <label>
-              Who do you help, and how?
+              {personal
+                ? "Who would enjoy your posts?"
+                : "Who do you help, and how?"}
               <textarea
                 required
                 minLength={10}
                 maxLength={1500}
-                placeholder="For example: I help small businesses keep their websites safe with simple security tools."
-                aria-label="Who do you help, and how?"
+                placeholder={
+                  personal
+                    ? "For example: People starting their fitness journey."
+                    : "For example: I help small businesses keep their websites safe with simple security tools."
+                }
+                aria-label={
+                  personal
+                    ? "Who would enjoy your posts?"
+                    : "Who do you help, and how?"
+                }
                 aria-describedby="brand-audience-help"
                 value={form.positioning}
                 onChange={(e) =>
@@ -704,16 +722,19 @@ export default function GrowthTeam({
                 }
               />
               <small id="brand-audience-help">
-                Tell us who your work is for, what problem you solve and how you
-                help.
+                {personal
+                  ? "Describe the people you want to reach."
+                  : "Tell us who you help and how."}
               </small>
             </label>
-            <AnswerGuide
-              kind="audience"
-              existing={form.positioning}
-              onUse={(answer) => setForm({ ...form, positioning: answer })}
-            />
-            <div className="grid">
+            {!personal && (
+              <AnswerGuide
+                kind="audience"
+                existing={form.positioning}
+                onUse={(answer) => setForm({ ...form, positioning: answer })}
+              />
+            )}
+            <div className="grid" hidden={personal}>
               <label>
                 Proof points you can substantiate (optional, one per line)
                 <textarea
