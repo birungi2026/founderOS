@@ -12,6 +12,7 @@ import PlatformIntelligence from "./PlatformIntelligence";
 import RymuBrand from "./RymuBrand";
 import CreationChoices from "./CreationChoices";
 import GrowthJourney from "./GrowthJourney";
+import GrowthJourneyGuide from "./GrowthJourneyGuide";
 import EmployeeOverview, {
   WorkspaceView,
   workspaceViews,
@@ -800,7 +801,7 @@ export default function Home() {
                     {
                       {
                         journey:
-                          "One connected journey from your interview to a real Facebook Page video and measured results.",
+                          "A simple guide to how Rymu helps you build your brand and reach the right people.",
                         overview:
                           "One next step, current activity and progress toward your goal.",
                         profile: personal
@@ -821,20 +822,24 @@ export default function Home() {
                     }
                   </p>
                 </section>
-                {view === "journey" && (
-                  <GrowthJourney
-                    key={orgId + projectId}
-                    orgId={orgId}
-                    projectId={projectId}
-                    isOwner={role === "owner"}
-                  />
+                {view === "journey" && <GrowthJourneyGuide />}
+                {view === "content" && (
+                  <details className="panel">
+                    <summary>Create a video from your interview</summary>
+                    <GrowthJourney
+                      key={orgId + projectId}
+                      orgId={orgId}
+                      projectId={projectId}
+                      isOwner={role === "owner"}
+                    />
+                  </details>
                 )}
                 {view === "overview" && (
                   <button
                     className="journey-entry"
                     onClick={() => setView("journey")}
                   >
-                    Start your guided growth journey →
+                    See how your growth journey works →
                   </button>
                 )}
                 {view === "overview" && (

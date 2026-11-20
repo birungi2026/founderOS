@@ -536,7 +536,7 @@ export default function EmployeeOverview({
         <p>
           Research, confirmation, drafts, social account connections and goal
           tracking are available. Interview capture and avatar onboarding
-          include a labeled demo. Use Your growth journey for provider-backed
+          include a labeled demo. Use Content studio for provider-backed
           interview processing, Tavus videos and approved Facebook Page
           scheduling. Administrator setup is required; other-channel publishing
           remains separate.
