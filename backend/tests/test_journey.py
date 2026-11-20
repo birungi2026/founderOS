@@ -41,6 +41,18 @@ def configured(monkeypatch, tmp_path):
         "BRAVE_SEARCH_API_KEY",
     ]:
         monkeypatch.setenv(name, "fixture-only")
+    monkeypatch.setenv("GENERATION_MODE", "llm")
+    from app.workflows import worker as research_worker
+
+    real_agent = research_worker.run_agent
+    # External model work is a deterministic fixture; the durable workflow and approval logic are real.
+    monkeypatch.setattr(
+        research_worker,
+        "run_agent",
+        lambda agent, ctx, artifacts: real_agent(
+            agent, {**ctx, "generation_mode": "template"}, artifacts
+        ),
+    )
     monkeypatch.setenv("JOURNEY_ENABLED_ORGANIZATIONS", "*")
     monkeypatch.setenv("JOURNEY_MEDIA_DIR", str(tmp_path / "media"))
     monkeypatch.setenv("PUBLIC_API_URL", "https://api.rymu.test")
@@ -450,3 +462,83 @@ def test_provider_http_contracts_and_missing_metrics(monkeypatch, tmp_path):
     observed = providers.facebook_results("4567", "page-fixture")
     assert observed["metrics"] == {} and observed["processing_status"] == "processing"
     assert len(calls) == 8
+
+
+def test_unprovisioned_workspace_cannot_start_paid_jobs(client, configured, monkeypatch):
+    register(client)
+    pid = project(client)
+    monkeypatch.setenv("JOURNEY_ENABLED_ORGANIZATIONS", "")
+    response = client.post(
+        f"/v1/projects/{pid}/journeys/interview?consent=yes",
+        content=b"\x1aE\xdf\xa3" + b"0" * 100,
+        headers={"content-type": "video/webm"},
+    )
+    assert response.status_code == 503
+    assert (
+        client.get(f"/v1/projects/{pid}/journeys").json()["capabilities"]["workspace_enabled"]
+        is False
+    )
+
+
+def test_training_and_render_reservations_respect_operator_limits(
+    client, database, configured, monkeypatch
+):
+    _, _, root, jid = through_content(client, database, monkeypatch)
+    monkeypatch.setenv("JOURNEY_MONTHLY_TRAINING_LIMIT", "0")
+    current = get(client, root, jid)
+    response = client.post(
+        root + "/" + jid + "/train", json={"revision": current["revision"], "consent": True}
+    )
+    assert response.status_code == 429
+    assert get(client, root, jid)["status"] == "content_review"
+    with database() as db:
+        row = db.get(GrowthJourney, jid)
+        row.data = {**row.data, "replica_id": "fixture-face", "clone_consent_at": time.time()}
+        db.commit()
+    monkeypatch.setenv("JOURNEY_MONTHLY_RENDER_LIMIT", "0")
+    response = client.post(root + "/" + jid + "/render", json={"revision": current["revision"]})
+    assert response.status_code == 429
+    assert get(client, root, jid)["status"] == "content_review"
+
+
+def test_confirmed_brand_and_owned_replica_can_be_reused_without_training(
+    client, database, configured, monkeypatch
+):
+    _, pid, root, source_id, _ = through_video(client, database, monkeypatch)
+    response = client.post(root + "/from-brand", json={})
+    assert response.status_code == 201, response.text
+    new_id = response.json()["id"]
+    assert get(client, root, new_id)["status"] == "brand_confirmed"
+    assert not get(client, root, new_id)["interview_available"]
+    with database() as db:
+        row = db.get(GrowthJourney, new_id)
+        row.status = "content_review"
+        row.data = {
+            **row.data,
+            "script": "Useful practical advice for a new video.",
+            "caption": "A new customer-focused post.",
+        }
+        db.commit()
+    reused = post(client, root, new_id, "reuse-replica", source_journey_id=source_id, consent=True)
+    assert reused["replica_id"] == "face123"
+    assert reused["replica_source_journey_id"] == source_id
+    assert client.get(root).json()["has_approved_brand"] is True
+    monkeypatch.setenv("JOURNEY_MONTHLY_TRAINING_LIMIT", "0")
+    assert post(client, root, new_id, "render")["status"] == "render_queued"
+    # Research gets observed engagement separately from manually confirmed customers.
+    from app.workflows.api import performance_snapshot
+
+    with database() as db:
+        source = db.get(GrowthJourney, source_id)
+        source.status = "measured"
+        source.data = {
+            **source.data,
+            "results": {"metrics": {"likes": 3}},
+            "observed_at": time.time(),
+            "publication": {"caption": "Approved public caption"},
+        }
+        db.commit()
+        performance = performance_snapshot(db, pid)
+        assert performance["published_content"][0]["engagement"] == {"likes": 3}
+        assert "video_url" not in str(performance) and "private-token" not in str(performance)
+        assert performance["totals"]["paying_customers"] == 0

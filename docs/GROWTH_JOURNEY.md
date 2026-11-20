@@ -47,3 +47,9 @@ A live acceptance run still requires provisioned keys, an HTTPS API reachable by
 - [Tavus Generate Video](https://docs.tavus.io/api-reference/video-request/create-video)
 - [Tavus Get Video](https://docs.tavus.io/api-reference/video-request/get-video)
 - [Meta Page videos](https://developers.facebook.com/docs/graph-api/reference/page/videos/)
+
+## Following posts and feedback
+
+After a brand is approved, “Create another post with my confirmed brand” starts at research instead of requesting another interview. A founder can explicitly reuse a trained replica from an earlier journey in the same project, only if the same user personally gave the original likeness/voice consent. Reuse requires a new consent action for the new video and does not reserve another training call. Every new video still requires rendering and a fresh video/caption/Page/time approval.
+
+Up to five recent measured Facebook engagement snapshots are included in the existing research/growth performance context for future experiments. Only the approved public caption, observed counts and observation time are included—no private recording paths, signed video URLs or social tokens. This does not add engagement to customer counts or establish attribution.

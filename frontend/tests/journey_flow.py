@@ -80,6 +80,7 @@ def journey_flow(page, project_id):
                 "created_at": "2026-11-19T12:00:00Z",
                 "revision": 1,
                 "status": "interview_review",
+                "interview_available": True,
                 "brief": brief,
                 "transcript": "Explicit fixture interview transcript for browser testing.",
             }

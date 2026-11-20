@@ -536,8 +536,10 @@ export default function EmployeeOverview({
         <p>
           Research, confirmation, drafts, social account connections and goal
           tracking are available. Interview capture and avatar onboarding
-          include a labeled demo. Live interview processing, rendered avatar
-          videos and automatic social publishing remain upcoming.
+          include a labeled demo. Use Your growth journey for provider-backed
+          interview processing, Tavus videos and approved Facebook Page
+          scheduling. Administrator setup is required; other-channel publishing
+          remains separate.
         </p>
       </details>
     </div>

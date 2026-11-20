@@ -1,4 +1,4 @@
-"""Durable SQL-backed MVP worker. One claim, bounded agent calls, no automatic publishing."""
+"""Durable research workflows and explicitly approved scheduled growth journeys."""
 
 import argparse
 import logging

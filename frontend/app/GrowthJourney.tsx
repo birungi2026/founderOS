@@ -19,6 +19,8 @@ type Brief = {
 type Journey = {
   created_at: string;
   interview_available?: boolean;
+  can_reuse_replica?: boolean;
+  trained_at?: number;
   id: string;
   status: string;
   revision: number;
@@ -139,6 +141,8 @@ export default function GrowthJourney({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [loaded, setLoaded] = useState(false);
+  const [hasBrand, setHasBrand] = useState(false),
+    [replicaSource, setReplicaSource] = useState("");
   const [contextReady, setContextReady] = useState(false);
   const [capturing, setCapturing] = useState(false),
     [previewUrl, setPreviewUrl] = useState("");
@@ -158,6 +162,7 @@ export default function GrowthJourney({
   async function refresh() {
     const list = await api(root, orgId);
     setJourneys(list.journeys);
+    setHasBrand(!!list.has_approved_brand);
     setCapabilities(list.capabilities);
     const id = selected.current || list.journeys[0]?.id;
     if (id) {
@@ -293,6 +298,9 @@ export default function GrowthJourney({
           result.detail || "Upload failed. Your file is still on your device.",
         );
       selected.current = result.id;
+      setCloneConsent(false);
+      setApprove(false);
+      setConsent(false);
       initialized.current = "";
       contentInitialized.current = "";
       setFile(null);
@@ -314,6 +322,12 @@ export default function GrowthJourney({
         channels remain in Social accounts. Provider setup is required; this
         screen does not simulate completed work.
       </p>
+      {!isOwner && (
+        <p>
+          Only the workspace owner can upload, confirm or schedule content here.
+          You can view the journey’s progress.
+        </p>
+      )}
       {!loaded && <p role="status">Loading your journey…</p>}
       {error && (
         <p role="alert" className="error">
@@ -401,6 +415,25 @@ export default function GrowthJourney({
           </fieldset>
         </form>
       </details>
+      {hasBrand && (
+        <button
+          className="secondary"
+          disabled={busy || !isOwner || !capabilities.workspace_enabled}
+          onClick={() =>
+            void action(async () => {
+              const row = await api(root + "/from-brand", orgId, {});
+              selected.current = row.id;
+              initialized.current = "";
+              contentInitialized.current = "";
+              setCloneConsent(false);
+              setApprove(false);
+              setReplicaSource("");
+            })
+          }
+        >
+          Create another post with my confirmed brand
+        </button>
+      )}
       {!!journeys.length && (
         <label>
           Saved journeys
@@ -615,15 +648,64 @@ export default function GrowthJourney({
                         checked={cloneConsent}
                         onChange={(e) => setCloneConsent(e.target.checked)}
                       />
-                      This is my likeness and voice. I authorize Tavus to use
-                      this recording to create my video replica.
+                      {replicaSource
+                        ? "This is my existing likeness and voice. I authorize its use in this video."
+                        : "This is my likeness and voice. I authorize Tavus to use this recording to create my video replica."}
                     </label>
+                    {!!journeys.filter(
+                      (item) =>
+                        item.can_reuse_replica && item.id !== journey.id,
+                    ).length && (
+                      <>
+                        <label>
+                          Or use your existing Tavus replica
+                          <select
+                            aria-label="Existing Tavus replica"
+                            value={replicaSource}
+                            onChange={(e) => {
+                              setReplicaSource(e.target.value);
+                              setCloneConsent(false);
+                            }}
+                          >
+                            <option value="">
+                              Choose your earlier training
+                            </option>
+                            {journeys
+                              .filter(
+                                (item) =>
+                                  item.can_reuse_replica &&
+                                  item.id !== journey.id,
+                              )
+                              .map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {new Date(item.created_at).toLocaleString()}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        <button
+                          disabled={!replicaSource || !cloneConsent}
+                          onClick={() =>
+                            void action(() =>
+                              post("reuse-replica", {
+                                source_journey_id: replicaSource,
+                                consent: true,
+                              }),
+                            )
+                          }
+                        >
+                          Use my existing replica for this video
+                        </button>
+                      </>
+                    )}
                     <button
                       disabled={
                         !cloneConsent ||
                         captionDirty ||
                         !capabilities.video ||
                         !capabilities.training ||
+                        !!replicaSource ||
+                        !journey.interview_available ||
                         !capabilities.workspace_enabled
                       }
                       onClick={() =>
@@ -764,7 +846,10 @@ export default function GrowthJourney({
               <button
                 className="secondary"
                 disabled={busy || !isOwner}
-                onClick={() => void action(() => post("cancel"))}
+                onClick={() => {
+                  setApprove(false);
+                  void action(() => post("cancel"));
+                }}
               >
                 Cancel scheduled post
               </button>

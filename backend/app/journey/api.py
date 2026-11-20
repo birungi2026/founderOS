@@ -109,7 +109,11 @@ def public(row):
 def capabilities():
     return {
         "transcription": bool(os.getenv("TRANSCRIPTION_API_KEY")),
-        "model": bool(os.getenv("LLM_API_KEY") and os.getenv("LLM_MODEL")),
+        "model": bool(
+            os.getenv("LLM_API_KEY")
+            and os.getenv("LLM_MODEL")
+            and os.getenv("GENERATION_MODE") == "llm"
+        ),
         "research": bool(os.getenv("BRAVE_SEARCH_API_KEY")),
         "video": bool(os.getenv("TAVUS_API_KEY")),
         "training": bool(
@@ -134,7 +138,19 @@ def journeys(project_id: str, context: Tenant = Depends(tenant), db: Session = D
             **capabilities(),
             "workspace_enabled": workspace_enabled(context.organization.id),
         },
-        "journeys": [public(row) for row in rows],
+        "has_approved_brand": bool(
+            (brand := latest_brand(db, project_id)) and brand.status == "approved"
+        ),
+        "journeys": [
+            {
+                **public(row),
+                "can_reuse_replica": bool(
+                    row.data.get("trained_at")
+                    and row.data.get("clone_consented_by") == context.user.id
+                ),
+            }
+            for row in rows
+        ],
     }
 
 
@@ -208,6 +224,7 @@ async def upload(
             .where(
                 Project.organization_id == context.organization.id,
                 GrowthJourney.created_at.startswith(period),
+                GrowthJourney.data["transcription_consent_at"].as_float().is_not(None),
             )
         )
         if used >= int(os.getenv("JOURNEY_MONTHLY_INTERVIEW_LIMIT", "30")):
@@ -305,6 +322,10 @@ def start_research(
         raise HTTPException(
             409, "Brand changed. Confirm the latest brand before starting another journey."
         )
+    if not capabilities()["model"]:
+        raise HTTPException(
+            503, "Enable a configured AI model for this journey; template mode is not used here"
+        )
     today = datetime.now(UTC).date()
     result = queue_workflow(
         project_id,
@@ -366,6 +387,8 @@ def train(
     change(db, row, data.revision, ["content_review"])
     if data.consent is not True or not capabilities()["video"]:
         raise HTTPException(422, "Tavus configuration and your likeness/voice consent are required")
+    if not Path(row.data.get("media_path", "")).is_file():
+        raise HTTPException(409, "The interview was removed. Upload a new interview for training.")
     media_url(row.id)  # Reject bad deployment configuration before reserving a paid call.
     if row.data.get("replica_id"):
         raise HTTPException(409, "This interview already has a trained replica")
@@ -402,6 +425,8 @@ def render(
     change(db, row, data.revision, ["content_review"])
     if not row.data.get("replica_id") or not row.data.get("clone_consent_at"):
         raise HTTPException(409, "Complete Tavus training and consent first")
+    if not capabilities()["video"]:
+        raise HTTPException(503, "Tavus video generation is not configured")
     limit = int(os.getenv("JOURNEY_MONTHLY_RENDER_LIMIT", "10"))
     period = datetime.now(UTC).strftime("%Y-%m")
     db.refresh(context.organization, with_for_update=True)
@@ -456,7 +481,7 @@ def account_for(db, project_id, account_id):
 
 
 class ScheduleInput(Decision):
-    account_id: str
+    account_id: str = Field(min_length=1, max_length=36)
     publish_at: datetime
     approve: bool
 
@@ -481,6 +506,11 @@ def schedule(
     when = data.publish_at.timestamp()
     if not time.time() + 60 <= when <= time.time() + 30 * 86400:
         raise HTTPException(422, "Choose a posting time between one minute and 30 days from now")
+    if account.expires_at <= when:
+        raise HTTPException(
+            409,
+            "This Page connection expires before the posting time. Reconnect or choose an earlier time.",
+        )
     snapshot = {
         "video_id": row.data["video_id"],
         "video_url": row.data["video_url"],
@@ -571,4 +601,71 @@ def confirm_journey_research(
     confirm_research(
         row.data["run_id"], ResearchConfirmation(research_hash=data.research_hash), context, db
     )
+    return public(row)
+
+
+@router.post("/projects/{project_id}/journeys/from-brand", status_code=201)
+def from_brand(project_id: str, context: Tenant = Depends(owner), db: Session = Depends(get_db)):
+    require_enabled(context)
+    project_for(db, project_id, context)
+    brand = latest_brand(db, project_id)
+    if not brand or brand.status != "approved":
+        raise HTTPException(409, "Confirm your brand before creating another post")
+    if (
+        db.scalar(
+            select(func.count())
+            .select_from(GrowthJourney)
+            .where(GrowthJourney.project_id == project_id)
+        )
+        >= 300
+    ):
+        raise HTTPException(
+            429, "Journey history limit reached; ask your administrator to archive older history"
+        )
+    row = GrowthJourney(
+        project_id=project_id,
+        requested_by=context.user.id,
+        status="brand_confirmed",
+        data={"brand_id": brand.id, "confirmed_at": time.time()},
+    )
+    db.add(row)
+    db.flush()
+    audit(db, context, "journey.started_from_confirmed_brand", row.id)
+    return public(row)
+
+
+class ReuseReplica(Decision):
+    source_journey_id: str = Field(min_length=1, max_length=36)
+    consent: bool
+
+
+@router.post("/projects/{project_id}/journeys/{journey_id}/reuse-replica")
+def reuse_replica(
+    project_id: str,
+    journey_id: str,
+    data: ReuseReplica,
+    context: Tenant = Depends(owner),
+    db: Session = Depends(get_db),
+):
+    require_enabled(context)
+    row = lookup(db, project_id, journey_id, context)
+    change(db, row, data.revision, ["content_review"])
+    source = lookup(db, project_id, data.source_journey_id, context)
+    if (
+        not data.consent
+        or not source.data.get("trained_at")
+        or source.data.get("clone_consented_by") != context.user.id
+    ):
+        raise HTTPException(
+            409, "Choose a trained replica that you personally consented to in this project"
+        )
+    row.data = {
+        **row.data,
+        "replica_id": source.data["replica_id"],
+        "trained_at": source.data["trained_at"],
+        "clone_consent_at": time.time(),
+        "clone_consented_by": context.user.id,
+        "replica_source_journey_id": source.id,
+    }
+    audit(db, context, "journey.replica_reuse_consented", row.id)
     return public(row)

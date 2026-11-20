@@ -1,4 +1,4 @@
-"""Owner-authorized, read-only social account access. Tokens never enter agent prompts."""
+"""Owner-authorized OAuth and snapshots, with opt-in Facebook publishing scope."""
 
 import math
 import os
