@@ -38,6 +38,7 @@ export default function FounderInterview({
     [approved, setApproved] = useState(false),
     [prepared, setPrepared] = useState(false);
   const requestVersion = useRef(0);
+  const contentVersion = useRef(0);
   const recorder = useRef<MediaRecorder | null>(null),
     stream = useRef<MediaStream | null>(null),
     preview = useRef<HTMLVideoElement | null>(null),
@@ -78,6 +79,7 @@ export default function FounderInterview({
   }, [recording]);
   function reset() {
     requestVersion.current++;
+    contentVersion.current++;
     stop();
     setUrl("");
     setSample(false);
@@ -93,6 +95,7 @@ export default function FounderInterview({
   async function record() {
     setError("");
     const version = ++requestVersion.current;
+    const recordingVersion = contentVersion.current;
     setRequesting(true);
     try {
       const capture = await openCamera();
@@ -129,8 +132,7 @@ export default function FounderInterview({
         if (timer.current) clearTimeout(timer.current);
         if (
           mounted.current &&
-          isActive.current &&
-          version === requestVersion.current &&
+          recordingVersion === contentVersion.current &&
           !oversized
         ) {
           setRecording(false);
