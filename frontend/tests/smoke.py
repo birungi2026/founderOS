@@ -159,7 +159,7 @@ def main():
         }""")
         interview.get_by_role("button", name="Record founder interview", exact=True).click()
         expect(interview.get_by_role("alert")).to_contain_text("Close other camera apps or tabs")
-        page.evaluate("navigator.mediaDevices.getUserMedia = window.__savedCamera")
+        page.evaluate("() => { navigator.mediaDevices.getUserMedia = window.__savedCamera; }")
         interview.get_by_role(
             "button", name="Record founder interview", exact=True
         ).click()
