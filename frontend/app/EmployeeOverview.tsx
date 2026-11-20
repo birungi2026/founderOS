@@ -5,6 +5,7 @@ import { goalLabels } from "./PersonalProgress";
 import Icon from "./Icon";
 import CreationChoices from "./CreationChoices";
 export type WorkspaceView =
+  | "journey"
   | "overview"
   | "profile"
   | "accounts"
@@ -14,6 +15,7 @@ export type WorkspaceView =
   | "settings";
 export const workspaceViews: [WorkspaceView, string][] = [
   ["overview", "Overview"],
+  ["journey", "Your growth journey"],
   ["profile", "1. Company & founder"],
   ["accounts", "2. Social accounts"],
   ["content", "3. Research & content"],

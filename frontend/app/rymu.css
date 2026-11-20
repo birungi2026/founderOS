@@ -1242,3 +1242,45 @@ p,
     color: #81738e;
   }
 }
+.growth-journey > details,
+.growth-journey > form,
+.growth-journey > div {
+  margin: 24px 0;
+}
+.growth-journey fieldset {
+  padding: 0;
+  border: 0;
+}
+.growth-journey summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 0;
+  font-weight: 600;
+}
+.journey-report {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #f7f4fc;
+  border-radius: 12px;
+  padding: 18px;
+  font-size: 12px;
+  max-height: 480px;
+  overflow: auto;
+}
+.journey-transcript {
+  white-space: pre-wrap;
+  max-height: 350px;
+  overflow: auto;
+}
+.journey-entry {
+  margin: 0 0 22px;
+}
+.growth-journey .check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.growth-journey video {
+  background: #171326;
+  border-radius: 14px;
+}

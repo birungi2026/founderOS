@@ -11,6 +11,7 @@ import SocialAccounts from "./SocialAccounts";
 import PlatformIntelligence from "./PlatformIntelligence";
 import RymuBrand from "./RymuBrand";
 import CreationChoices from "./CreationChoices";
+import GrowthJourney from "./GrowthJourney";
 import EmployeeOverview, {
   WorkspaceView,
   workspaceViews,
@@ -108,6 +109,7 @@ export default function Home() {
   }
   const viewNames: Record<string, string> = {
     overview: "Home",
+    journey: "Your growth journey",
     profile: personal ? "Your brand" : "Brand profile",
     accounts: "Social accounts",
     content: "Content studio",
@@ -797,6 +799,8 @@ export default function Home() {
                   <p>
                     {
                       {
+                        journey:
+                          "One connected journey from your interview to a real Facebook Page video and measured results.",
                         overview:
                           "One next step, current activity and progress toward your goal.",
                         profile: personal
@@ -817,6 +821,22 @@ export default function Home() {
                     }
                   </p>
                 </section>
+                {view === "journey" && (
+                  <GrowthJourney
+                    key={orgId + projectId}
+                    orgId={orgId}
+                    projectId={projectId}
+                    isOwner={role === "owner"}
+                  />
+                )}
+                {view === "overview" && (
+                  <button
+                    className="journey-entry"
+                    onClick={() => setView("journey")}
+                  >
+                    Start your guided growth journey →
+                  </button>
+                )}
                 {view === "overview" && (
                   <div>
                     <EmployeeOverview

@@ -29,6 +29,13 @@ SCOPES = {
 }
 
 
+def requested_scopes(provider):
+    scopes = list(SCOPES[provider])
+    if provider == "facebook" and os.getenv("JOURNEY_PUBLISHING_ENABLED") == "true":
+        scopes.append("pages_manage_posts")
+    return scopes
+
+
 def config(provider):
     if provider not in SCOPES:
         raise HTTPException(404, "Unsupported social provider")
@@ -114,7 +121,11 @@ def accounts(project_id: str, context: Tenant = Depends(tenant), db: Session = D
         except HTTPException:
             ready = False
         providers.append(
-            {"provider": provider, "configured": ready, "requested_permissions": SCOPES[provider]}
+            {
+                "provider": provider,
+                "configured": ready,
+                "requested_permissions": requested_scopes(provider),
+            }
         )
     return {
         "providers": providers,
@@ -157,7 +168,7 @@ def connect(
         "client_key" if provider == "tiktok" else "client_id": app_id,
         "redirect_uri": redirect,
         "response_type": "code",
-        "scope": (" " if provider == "linkedin" else ",").join(SCOPES[provider]),
+        "scope": (" " if provider == "linkedin" else ",").join(requested_scopes(provider)),
         "state": state,
     }
     return {"authorization_url": endpoint + "?" + urlencode(params)}
@@ -192,7 +203,7 @@ def other_provider_exchange(provider, params):
         if isinstance(permissions, str)
         else (SCOPES[provider] if provider == "linkedin" else [])
     )
-    if not set(SCOPES[provider]).issubset(granted):
+    if not set(requested_scopes(provider)).issubset(granted):
         raise HTTPException(400, "Required social permission was not granted")
     headers = {"Authorization": f"Bearer {token}"}
     if provider == "linkedin":
@@ -279,7 +290,7 @@ def callback(
         granted = short.get("permissions", [])
         if isinstance(granted, str):
             granted = granted.split(",")
-        if not set(SCOPES[provider]).issubset(granted):
+        if not set(requested_scopes(provider)).issubset(granted):
             raise HTTPException(400, "Required social permission was not granted")
         long = call(
             "GET",
@@ -325,7 +336,7 @@ def callback(
         granted = [
             p["permission"] for p in permissions.get("data", []) if p.get("status") == "granted"
         ]
-        if not set(SCOPES[provider]).issubset(granted):
+        if not set(requested_scopes(provider)).issubset(granted):
             raise HTTPException(400, "Required social permission was not granted")
         entries = call(
             "GET",
