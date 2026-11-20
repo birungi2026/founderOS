@@ -54,6 +54,7 @@ def configured(monkeypatch, tmp_path):
         ),
     )
     monkeypatch.setenv("JOURNEY_ENABLED_ORGANIZATIONS", "*")
+    monkeypatch.setenv("TAVUS_TRAINING_ORGANIZATIONS", "*")
     monkeypatch.setenv("JOURNEY_MEDIA_DIR", str(tmp_path / "media"))
     monkeypatch.setenv("PUBLIC_API_URL", "https://api.rymu.test")
     monkeypatch.setenv("JOURNEY_MEDIA_SIGNING_KEY", "fixture-signing-key-not-a-real-secret-12345")

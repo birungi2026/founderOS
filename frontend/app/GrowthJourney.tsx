@@ -17,6 +17,7 @@ type Brief = {
   differentiator: string;
 };
 type Journey = {
+  asset_id?: string;
   created_at: string;
   interview_available?: boolean;
   can_reuse_replica?: boolean;
@@ -65,6 +66,8 @@ const labels: Record<string, string> = {
   video_ready: "Watch your video before approving it.",
   scheduled: "Approved and scheduled.",
   publishing: "Sending your approved video to Facebook…",
+  instagram_processing: "Instagram is processing the video",
+  instagram_ready: "Instagram video ready to publish",
   posted: "Facebook accepted the upload. Processing may still be in progress.",
   measuring: "Checking Facebook processing and engagement…",
   measured: "Your latest Facebook results are available.",
@@ -108,11 +111,13 @@ export default function GrowthJourney({
   projectId,
   isOwner,
   personal = false,
+  initialJourneyId = "",
 }: {
   orgId: string;
   projectId: string;
   isOwner: boolean;
   personal?: boolean;
+  initialJourneyId?: string;
 }) {
   const [journeys, setJourneys] = useState<Journey[]>([]),
     [journey, setJourney] = useState<Journey | null>(null);
@@ -157,7 +162,7 @@ export default function GrowthJourney({
     setPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [file]);
-  const selected = useRef(""),
+  const selected = useRef(initialJourneyId),
     initialized = useRef(""),
     contentInitialized = useRef("");
   const root = `/v1/projects/${projectId}/journeys`;
@@ -319,7 +324,10 @@ export default function GrowthJourney({
       <span className="eyebrow">FROM YOUR STORY TO YOUR NEXT CUSTOMER</span>
       <h2>Create and schedule a video</h2>
       <p>Interview → brand → research → video → approval → results.</p>
-      <p>Schedule Facebook Page videos here. Provider setup is required.</p>
+      <p>
+        Schedule Facebook Page or Instagram videos here. Provider setup is
+        required.
+      </p>
       {!isOwner && (
         <p>
           Only owners can upload, confirm or schedule. You have view access.
@@ -610,8 +618,9 @@ export default function GrowthJourney({
             <div>
               <h3>4. Review your content</h3>
               <p>
-                Generation: {journey.generation_mode}. Review every claim before
-                making or posting the video.
+                {journey.asset_id
+                  ? "Your original footage. Review the clip and caption before posting."
+                  : `Generation: ${journey.generation_mode}. Review every claim before posting.`}
               </p>
               <fieldset disabled={busy || !isOwner}>
                 <label>
@@ -620,6 +629,7 @@ export default function GrowthJourney({
                     minLength={20}
                     maxLength={1200}
                     value={script}
+                    readOnly={!!journey.asset_id}
                     onChange={(e) => {
                       setScript(e.target.value);
                       setApprove(false);
@@ -776,7 +786,7 @@ export default function GrowthJourney({
               <p>Approve this video, caption, Page and time before posting.</p>
               <fieldset disabled={busy || !isOwner}>
                 <label>
-                  Facebook Page
+                  Facebook Page or Instagram account
                   <select
                     aria-label="Facebook Page"
                     required
@@ -790,13 +800,17 @@ export default function GrowthJourney({
                     {accounts
                       .filter(
                         (a) =>
-                          a.provider === "facebook" &&
+                          (a.provider === "facebook" ||
+                            a.provider === "instagram") &&
                           a.status === "connected" &&
-                          a.permissions.includes("pages_manage_posts"),
+                          (a.permissions.includes("pages_manage_posts") ||
+                            a.permissions.includes(
+                              "instagram_business_content_publish",
+                            )),
                       )
                       .map((a) => (
                         <option key={a.id} value={a.id}>
-                          {a.name}
+                          {a.provider} · {a.name}
                         </option>
                       ))}
                   </select>

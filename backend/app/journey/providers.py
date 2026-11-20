@@ -200,3 +200,78 @@ def facebook_results(video_id, token):
         "permalink": https_url(result["permalink_url"]) if result.get("permalink_url") else None,
         "metrics": metrics,
     }
+
+
+def instagram(method, path, token, payload=None):
+    with httpx.Client(timeout=60, follow_redirects=False) as client:
+        return response_json(
+            client.request(
+                method,
+                graph("instagram") + "/" + path,
+                headers={"Authorization": "Bearer " + token},
+                **({"data" if method == "POST" else "params": payload} if payload else {}),
+            )
+        )
+
+
+def instagram_container(account, token, video_url, caption):
+    return identifier(
+        instagram(
+            "POST",
+            identifier(account) + "/media",
+            token,
+            {
+                "media_type": "REELS",
+                "video_url": https_url(video_url),
+                "caption": caption,
+                "share_to_feed": "true",
+            },
+        ).get("id")
+    )
+
+
+def instagram_status(container, token):
+    return instagram("GET", identifier(container), token, {"fields": "status_code"}).get(
+        "status_code"
+    )
+
+
+def instagram_publish(account, container, token):
+    return identifier(
+        instagram(
+            "POST",
+            identifier(account) + "/media_publish",
+            token,
+            {"creation_id": identifier(container)},
+        ).get("id")
+    )
+
+
+def instagram_results(media_id, token, insights=False):
+    data = instagram(
+        "GET", identifier(media_id), token, {"fields": "id,permalink,like_count,comments_count"}
+    )
+    metrics = {}
+    for source, target in [("like_count", "likes"), ("comments_count", "comments")]:
+        value = data.get(source)
+        if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+            metrics[target] = value
+    if insights:
+        for metric in ["reach", "saved", "shares", "views"]:
+            try:
+                result = instagram(
+                    "GET", identifier(media_id) + "/insights", token, {"metric": metric}
+                )
+                item = result.get("data", [{}])[0]
+                value = item.get("total_value", {}).get("value")
+                if value is None:
+                    value = item.get("values", [{}])[0].get("value")
+                if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+                    metrics[metric] = value
+            except (httpx.HTTPError, ProviderFailure, IndexError):
+                pass  # Some media, API versions or permissions do not expose every metric.
+    return {
+        "processing_status": "ready",
+        "permalink": https_url(data["permalink"]) if data.get("permalink") else None,
+        "metrics": metrics,
+    }

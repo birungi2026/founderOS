@@ -21,10 +21,18 @@ STAGES = {
     "render_queued": "render_request",
     "rendering": "checking_video",
     "scheduled": "publishing",
+    "instagram_processing": "checking_instagram",
+    "instagram_ready": "publishing_instagram",
     "posted": "measuring",
     "measured": "measuring",
 }
-READS = {"checking_research", "checking_training", "checking_video", "measuring"}
+READS = {
+    "checking_research",
+    "checking_training",
+    "checking_video",
+    "measuring",
+    "checking_instagram",
+}
 
 
 def finish(factory, journey_id, token, status, payload=None, error=None, delay=0):
@@ -111,6 +119,17 @@ def process_one(factory=SessionLocal):
         return True
     write_started = False
     try:
+        if previous in {
+            "interview_uploaded",
+            "training_queued",
+            "render_queued",
+            "scheduled",
+            "instagram_ready",
+        }:
+            from ..billing import active
+
+            with factory() as db:
+                active(db, project.organization_id)
         if previous == "interview_uploaded":
             transcript, brief = providers.interview(data["media_path"], data["media_mime"])
             finish(
@@ -195,7 +214,13 @@ def process_one(factory=SessionLocal):
                 finish(factory, journey_id, token, "failed", error="tavus_render_failed")
             else:
                 finish(factory, journey_id, token, "rendering", delay=30)
-        elif previous in {"scheduled", "posted", "measured"}:
+        elif previous in {
+            "scheduled",
+            "posted",
+            "measured",
+            "instagram_processing",
+            "instagram_ready",
+        }:
             publication = data["publication"]
             with factory() as db:
                 account = account_for(db, project_id, publication["account_id"])
@@ -206,7 +231,12 @@ def process_one(factory=SessionLocal):
                         Membership.role == "owner",
                     )
                 )
-                if not approver or os.getenv("JOURNEY_PUBLISHING_ENABLED") != "true":
+                flag = (
+                    "JOURNEY_PUBLISHING_ENABLED"
+                    if account.provider == "facebook"
+                    else "INSTAGRAM_PUBLISHING_ENABLED"
+                )
+                if not approver or os.getenv(flag) != "true":
                     raise HTTPException(409, "Publishing access revoked")
                 access_token = vault().decrypt(account.encrypted_token.encode()).decode()
                 external_id = account.external_id
@@ -214,23 +244,81 @@ def process_one(factory=SessionLocal):
                 if now - publication["publish_at"] > 3600:
                     finish(factory, journey_id, token, "missed", error="posting_time_missed")
                 else:
-                    video_status, fresh_url = providers.video_status(publication["video_id"])
-                    if video_status != "ready" or not fresh_url:
-                        raise providers.ProviderFailure("approved_video_not_available")
+                    if publication.get("asset_id"):
+                        from ..media import video_url
+                        from ..models import VideoAsset
+
+                        with factory() as db:
+                            asset = db.get(VideoAsset, publication["asset_id"])
+                            if (
+                                not asset
+                                or asset.project_id != project_id
+                                or asset.status != "ready"
+                            ):
+                                raise providers.ProviderFailure("approved_video_not_available")
+                        fresh_url = video_url(asset.id)
+                    else:
+                        video_status, fresh_url = providers.video_status(publication["video_id"])
+                        if video_status != "ready" or not fresh_url:
+                            raise providers.ProviderFailure("approved_video_not_available")
                     write_started = True
-                    video_id = providers.facebook_publish(
-                        external_id, access_token, fresh_url, publication["caption"]
-                    )
+                    if account.provider == "instagram":
+                        container_id = providers.instagram_container(
+                            external_id, access_token, fresh_url, publication["caption"]
+                        )
+                        finish(
+                            factory,
+                            journey_id,
+                            token,
+                            "instagram_processing",
+                            {"instagram_container_id": container_id, "instagram_started_at": now},
+                            delay=30,
+                        )
+                    else:
+                        video_id = providers.facebook_publish(
+                            external_id, access_token, fresh_url, publication["caption"]
+                        )
+                        finish(
+                            factory,
+                            journey_id,
+                            token,
+                            "posted",
+                            {"facebook_video_id": video_id, "submitted_at": now},
+                            delay=60,
+                        )
+            elif previous == "instagram_processing":
+                status = providers.instagram_status(data["instagram_container_id"], access_token)
+                if status == "FINISHED":
+                    finish(factory, journey_id, token, "instagram_ready")
+                elif status in {"ERROR", "EXPIRED"} or now - data["instagram_started_at"] > 600:
                     finish(
-                        factory,
-                        journey_id,
-                        token,
-                        "posted",
-                        {"facebook_video_id": video_id, "submitted_at": now},
-                        delay=60,
+                        factory, journey_id, token, "failed", error="instagram_processing_failed"
                     )
+                else:
+                    finish(factory, journey_id, token, "instagram_processing", delay=30)
+            elif previous == "instagram_ready":
+                write_started = True
+                media_id = providers.instagram_publish(
+                    external_id, data["instagram_container_id"], access_token
+                )
+                finish(
+                    factory,
+                    journey_id,
+                    token,
+                    "posted",
+                    {"instagram_media_id": media_id, "submitted_at": now},
+                    delay=60,
+                )
             else:
-                metrics = providers.facebook_results(data["facebook_video_id"], access_token)
+                metrics = (
+                    providers.instagram_results(
+                        data["instagram_media_id"],
+                        access_token,
+                        "instagram_business_manage_insights" in account.permissions,
+                    )
+                    if account.provider == "instagram"
+                    else providers.facebook_results(data["facebook_video_id"], access_token)
+                )
                 finish(
                     factory,
                     journey_id,
@@ -257,7 +345,7 @@ def process_one(factory=SessionLocal):
                 journey_id,
                 token,
                 "uncertain"
-                if previous in {"training_queued", "render_queued", "scheduled"}
+                if previous in {"training_queued", "render_queued", "scheduled", "instagram_ready"}
                 else "failed",
                 error="provider_request_failed_do_not_resubmit",
             )

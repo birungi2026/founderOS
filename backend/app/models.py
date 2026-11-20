@@ -274,3 +274,56 @@ class GrowthJourney(Base):
     next_check: Mapped[float] = mapped_column(default=0)
     error_code: Mapped[str | None] = mapped_column(String(100))
     created_at: Mapped[str] = mapped_column(String(40), default=now)
+
+
+class BillingAccount(Base):
+    __tablename__ = "billing_accounts"
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), primary_key=True)
+    customer_id: Mapped[str | None] = mapped_column(String(100), unique=True)
+    subscription_id: Mapped[str | None] = mapped_column(String(100), unique=True)
+    status: Mapped[str] = mapped_column(String(30), default="inactive")
+    period_end: Mapped[float] = mapped_column(default=0)
+    updated_event: Mapped[int] = mapped_column(default=0)
+    checkout_key: Mapped[str | None] = mapped_column(String(36))
+    checkout_session_id: Mapped[str | None] = mapped_column(String(100))
+    checkout_url: Mapped[str | None] = mapped_column(String(1000))
+    checkout_expires: Mapped[float] = mapped_column(default=0)
+
+
+class BillingEvent(Base):
+    __tablename__ = "billing_events"
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
+
+
+class ResourceUsage(Base):
+    __tablename__ = "resource_usage"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    period: Mapped[str] = mapped_column(String(7))
+    resource_key: Mapped[str] = mapped_column(String(100), unique=True)
+    kind: Mapped[str] = mapped_column(String(30))
+    units: Mapped[int]
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
+
+
+class VideoAsset(Base):
+    __tablename__ = "video_assets"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
+    requested_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    status: Mapped[str] = mapped_column(String(30), default="queued")
+    data: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
+    lease_until: Mapped[float] = mapped_column(default=0)
+
+
+class PilotObservation(Base):
+    __tablename__ = "pilot_observations"
+    __table_args__ = (UniqueConstraint("project_id", "external_id"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
+    external_id: Mapped[str] = mapped_column(String(100))
+    observed_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    data: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[str] = mapped_column(String(40), default=now)

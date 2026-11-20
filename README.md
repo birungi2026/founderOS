@@ -115,3 +115,5 @@ See the [launch cost model and proposed subscriptions](docs/OPERATING_COSTS.md) 
 The product identity is now **Rymu** at the intended domain **rymu.ai**, using the selected indigo/coral mark and a phone-first content studio. See the [updated design system](docs/DESIGN_SYSTEM.md). Legacy repository, service and configuration identifiers remain compatible.
 
 The [connected growth journey](docs/GROWTH_JOURNEY.md) adds interview transcription, reviewed brand/research, Tavus video generation, approved Facebook Page scheduling and observed engagement. It requires explicitly provisioned provider access; automated tests use provider fixtures, and live credentials are never embedded in the frontend.
+
+Controlled pilot: [recommendation audit](docs/RECOMMENDATION_AUDIT.md) and [DigitalOcean, billing and live acceptance](docs/PILOT_DEPLOYMENT.md).
