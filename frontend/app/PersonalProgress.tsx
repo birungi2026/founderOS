@@ -90,10 +90,7 @@ export default function PersonalProgress({
               project.personal_target,
             )}
           />
-          <p>
-            Measure the people and opportunities relevant to your niche.
-            Follower growth does not imply revenue.
-          </p>
+          <p>Track your audience and opportunities. Followers are not sales.</p>
           <form onSubmit={save}>
             <fieldset disabled={!canWrite || busy}>
               <label>
@@ -111,8 +108,8 @@ export default function PersonalProgress({
             </fieldset>
           </form>
           <small>
-            Enter the current total, not an increment. Connected account data is
-            separate until automated goal attribution is implemented.
+            Enter your current total. Connected account data is tracked
+            separately.
           </small>
         </>
       )}

@@ -102,9 +102,8 @@ export default function JourneyResearch({
           ),
       )}
       <p>
-        Search results are evidence to assess, not independently verified facts.
-        Correct your brand or company profile and start fresh research if
-        important facts are wrong.
+        Check the sources. If key facts are wrong, update your profile and
+        research again.
       </p>
     </div>
   );

@@ -71,11 +71,9 @@ export default function SocialAccounts({
       <span className="eyebrow">CONNECTED SOCIAL ACCOUNTS</span>
       <h2>Give your growth employee account access.</h2>
       <p>
-        Connect LinkedIn, Instagram, TikTok or Facebook Pages using official
-        account authorization. Available data depends on the permissions
-        granted. Approved Facebook Page video posting is available in Your
-        growth journey when enabled. Other publishing and messaging are not
-        connected here.
+        Connect your accounts securely. Access depends on permissions. Approved
+        Facebook Page videos are scheduled in Content studio; other posting and
+        messaging are not connected.
       </p>
       <SocialDemo />
       {message && <p role="status">{message}</p>}
@@ -168,10 +166,9 @@ export default function SocialAccounts({
         </article>
       ))}
       <p>
-        Owners control access. Disconnect removes the stored token and current
-        account snapshot. You can also revoke Rymu in your social account
-        settings. Previously created workflow snapshots remain in campaign
-        history.
+        Owners manage access. Disconnect removes saved access and current
+        account data; campaign history remains. You can also revoke Rymu in your
+        social settings.
       </p>
     </section>
   );

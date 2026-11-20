@@ -316,19 +316,11 @@ export default function GrowthJourney({
     >
       <span className="eyebrow">FROM YOUR STORY TO YOUR NEXT CUSTOMER</span>
       <h2>Create and schedule a video</h2>
-      <p>
-        Interview → confirm your brand → research → finished video → approve and
-        schedule → real results.
-      </p>
-      <p>
-        This first connected journey posts videos to a Facebook Page. Other
-        channels remain in Social accounts. Provider setup is required; this
-        screen does not simulate completed work.
-      </p>
+      <p>Interview → brand → research → video → approval → results.</p>
+      <p>Schedule Facebook Page videos here. Provider setup is required.</p>
       {!isOwner && (
         <p>
-          Only the workspace owner can upload, confirm or schedule content here.
-          You can view the journey’s progress.
+          Only owners can upload, confirm or schedule. You have view access.
         </p>
       )}
       {!loaded && <p role="status">Loading your journey…</p>}
@@ -351,14 +343,12 @@ export default function GrowthJourney({
       <details open={!journey}>
         <summary>1. Record or upload your interview</summary>
         <p>
-          Introduce yourself. Explain the problem you solve, who you help, your
-          experience and the topics you want to share. Tell Rymu how you prefer
-          to speak and write. Missing facts will be left blank for you to
-          complete.
+          Share your story, audience, offer and topics. Speak in your natural
+          style.
         </p>
         <p>
-          Use MP4 or WebM, up to 25 MB. Your file is sent to the configured
-          transcription and language-model providers only after you agree.
+          MP4 or WebM, up to 25 MB. Uploading sends your video to transcription
+          and AI providers with your consent.
         </p>
         <JourneyRecorder
           disabled={busy || !isOwner}
@@ -504,10 +494,8 @@ export default function GrowthJourney({
                 <p className="journey-transcript">{journey.transcript}</p>
               </details>
               <p>
-                Correct anything that is missing or wrong. This creates and
-                approves a new brand version; Rymu will use only the confirmed
-                version for this journey. No personality or accent is inferred
-                from your face.
+                Check the details before confirming. Rymu uses this approved
+                brand; it does not infer personality or accent from your face.
               </p>
               <fieldset disabled={busy || !isOwner}>
                 {reviewFields.map(([key, label]) => (
@@ -639,11 +627,9 @@ export default function GrowthJourney({
                 {journey.status === "content_review" && !journey.replica_id && (
                   <>
                     <p>
-                      Tavus training is a paid provider operation. Use at least
-                      30 seconds of clear, continuous 1080p footage with your
-                      face visible, clean audio and natural speech; provider
-                      footage and consent requirements still apply. Training
-                      quality is not guaranteed.
+                      Paid Tavus training needs at least 30 seconds of
+                      continuous 1080p video, a visible face and clear speech.
+                      Provider consent and footage rules apply.
                     </p>
                     <label className="check">
                       <input
@@ -764,10 +750,7 @@ export default function GrowthJourney({
               }}
             >
               <h3>5. Approve and schedule</h3>
-              <p>
-                Your approval covers this exact video, caption, Facebook Page
-                and posting time. Nothing is posted until you approve.
-              </p>
+              <p>Approve this video, caption, Page and time before posting.</p>
               <fieldset disabled={busy || !isOwner}>
                 <label>
                   Facebook Page
@@ -874,9 +857,8 @@ export default function GrowthJourney({
               <details>
                 <summary>Remove the stored interview</summary>
                 <p>
-                  This permanently removes the recording and transcript from
-                  Rymu. Your approved brand and any Tavus face or video remain
-                  separate.
+                  Permanently deletes your Rymu recording and transcript. Your
+                  approved brand and Tavus assets remain.
                 </p>
                 <button
                   className="secondary"
@@ -918,9 +900,8 @@ export default function GrowthJourney({
                 </a>
               )}
               <p>
-                These are the latest provider counts, not added repeatedly.
-                Leads and paying customers are tracked separately in Results;
-                engagement does not prove a sale.
+                Latest engagement counts. Leads and customers are tracked
+                separately in Results.
               </p>
             </div>
           )}
