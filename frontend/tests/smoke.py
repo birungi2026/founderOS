@@ -29,7 +29,7 @@ def main():
             page.get_by_role("heading", name="Create your account", exact=True)
         ).to_be_visible()
         expect(
-            page.get_by_role("radio", name="My business", exact=True)
+            page.get_by_role("radio", name="Grow my business", exact=True)
         ).to_be_checked()
         page.get_by_role("button", name="Show password", exact=True).click()
         expect(page.get_by_label("Password", exact=True)).to_have_attribute(
@@ -153,6 +153,13 @@ def main():
         interview = page.get_by_role(
             "region", name="Founder video interview", exact=True
         )
+        page.evaluate("""() => {
+          window.__savedCamera = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+          navigator.mediaDevices.getUserMedia = async () => { throw new DOMException('Busy', 'NotReadableError'); };
+        }""")
+        interview.get_by_role("button", name="Record founder interview", exact=True).click()
+        expect(interview.get_by_role("alert")).to_contain_text("Close other camera apps or tabs")
+        page.evaluate("() => { navigator.mediaDevices.getUserMedia = window.__savedCamera; }")
         interview.get_by_role(
             "button", name="Record founder interview", exact=True
         ).click()
@@ -524,7 +531,7 @@ def main():
 
         page.get_by_role("button", name="Sign out", exact=True).click()
         page.get_by_role("button", name="Create an account", exact=True).click()
-        page.get_by_role("radio", name="My personal brand", exact=True).check()
+        page.get_by_role("radio", name="Grow a following", exact=True).check()
         creator_email = f"creator-{uuid4().hex[:12]}@example.com"
         page.get_by_label("Email", exact=True).fill(creator_email)
         page.get_by_label("Password", exact=True).fill("browser-fixture-password")
@@ -534,12 +541,8 @@ def main():
         )
         expect(page.get_by_label("Company problem", exact=True)).not_to_be_visible()
         page.get_by_label("Your name or brand", exact=True).fill("Ada Teaches")
-        page.get_by_label("Your niche and expertise", exact=True).fill(
-            "Practical software engineering and mentoring lessons."
-        )
-        page.get_by_label("Who do you want to reach?", exact=True).fill(
-            "Junior software engineers"
-        )
+        page.get_by_role("group", name="Choose your interests", exact=True).get_by_role("button", name="Basketball", exact=True).click()
+        page.get_by_role("group", name="Choose your audience", exact=True).get_by_role("button", name="College students", exact=True).click()
         page.get_by_label("Personal brand outcome", exact=True).select_option(
             "newsletter_subscribers"
         )
@@ -551,6 +554,11 @@ def main():
             )
         ).to_be_visible()
         expect(page.get_by_text("PAYING CUSTOMERS", exact=True)).not_to_be_visible()
+        section("1. You & your brand")
+        profile = page.locator(".brand-studio")
+        expect(page.get_by_label("Problem your company solves", exact=True)).not_to_be_visible()
+        expect(page.get_by_label("Competitor websites", exact=True)).not_to_be_visible()
+        expect(profile.get_by_label("What do you know well?", exact=True)).not_to_be_visible()
         section("Audience & opportunities")
         page.get_by_label("Current total (self-reported)", exact=True).fill("75")
         page.get_by_role(
@@ -566,24 +574,20 @@ def main():
             page.get_by_label("Personal brand milestone progress", exact=True)
         ).to_have_attribute("value", "75")
         section("1. You & your brand")
-        page.get_by_label("Your name", exact=True).fill("Ada Expert")
-        page.get_by_label("Your story", exact=True).fill(
-            "I mentor junior software engineers and share practical lessons from building real software."
-        )
-        page.get_by_label("What do you know well?", exact=True).fill(
-            "Software engineering"
-        )
-        page.get_by_label("What topics should Rymu post about?", exact=True).fill(
-            "Practical engineering"
-        )
-        page.get_by_label("How should Rymu write your posts?", exact=True).fill(
-            "Practical and encouraging"
-        )
-        page.get_by_label("Who do you help, and how?", exact=True).fill(
-            "I help junior engineers learn through practical examples and mentoring."
-        )
+        page.get_by_label("Your name", exact=True).fill("Ada Student")
+        expect(page.get_by_label("Your story", exact=True)).not_to_be_visible()
+        profile = page.locator(".brand-studio")
+        profile.get_by_role("group", name="Pick your interests", exact=True).get_by_role("button", name="Basketball", exact=True).click()
+        profile.get_by_role("group", name="Pick your style", exact=True).get_by_role("button", name="Funny", exact=True).click()
+        profile.get_by_role("group", name="Pick your audience", exact=True).get_by_role("button", name="College students", exact=True).click()
+        profile.get_by_label("Topics or claims to avoid (optional, one per line)", exact=True).fill("Politics")
         page.get_by_role("button", name="Save brand version", exact=True).click()
         page.get_by_role("button", name="Approve brand version 1", exact=True).click()
+        page.reload()
+        section("1. You & your brand")
+        expect(page.get_by_role("group", name="Pick your interests", exact=True).get_by_role("button", name="Basketball", exact=True)).to_have_attribute("aria-pressed", "true")
+        expect(page.get_by_label("Topics or claims to avoid (optional, one per line)", exact=True)).to_have_value("Politics")
+
         section("3. Research & content")
         expect(
             page.get_by_label("What should the team achieve?", exact=True)

@@ -107,10 +107,12 @@ export default function GrowthJourney({
   orgId,
   projectId,
   isOwner,
+  personal = false,
 }: {
   orgId: string;
   projectId: string;
   isOwner: boolean;
+  personal?: boolean;
 }) {
   const [journeys, setJourneys] = useState<Journey[]>([]),
     [journey, setJourney] = useState<Journey | null>(null);
@@ -466,7 +468,10 @@ export default function GrowthJourney({
                   const brand = {
                     founder_name: draft.founder_name,
                     story: draft.story,
-                    expertise: split(draft.expertise || ""),
+                    expertise: split(
+                      (personal ? draft.content_pillars : draft.expertise) ||
+                        "",
+                    ),
                     voice: draft.voice,
                     positioning: draft.positioning,
                     content_pillars: split(draft.content_pillars || ""),
@@ -477,10 +482,14 @@ export default function GrowthJourney({
                   await post("confirm-brand", {
                     brand,
                     company: {
-                      problem: draft.problem,
-                      solution: draft.solution,
-                      target_customers: draft.target_customers,
-                      differentiator: draft.differentiator || "",
+                      problem: personal ? "" : draft.problem,
+                      solution: personal ? draft.story : draft.solution,
+                      target_customers: personal
+                        ? draft.positioning
+                        : draft.target_customers,
+                      differentiator: personal
+                        ? ""
+                        : draft.differentiator || "",
                       competitors: [],
                       expected_version: companyVersion,
                     },
@@ -498,20 +507,34 @@ export default function GrowthJourney({
                 brand; it does not infer personality or accent from your face.
               </p>
               <fieldset disabled={busy || !isOwner}>
-                {reviewFields.map(([key, label]) => (
-                  <label key={key}>
-                    {label}
-                    {(key === "expertise" || key === "content_pillars") &&
-                      " (one per line)"}
-                    <textarea
-                      value={draft[key] || ""}
-                      required={!["differentiator", "problem"].includes(key)}
-                      onChange={(e) =>
-                        setDraft({ ...draft, [key]: e.target.value })
-                      }
-                    />
-                  </label>
-                ))}
+                {reviewFields
+                  .filter(
+                    ([key]) =>
+                      !personal ||
+                      ![
+                        "expertise",
+                        "problem",
+                        "solution",
+                        "target_customers",
+                        "differentiator",
+                      ].includes(key),
+                  )
+                  .map(([key, label]) => (
+                    <label key={key}>
+                      {personal && key === "positioning"
+                        ? "Who would enjoy your posts?"
+                        : label}
+                      {(key === "expertise" || key === "content_pillars") &&
+                        " (one per line)"}
+                      <textarea
+                        value={draft[key] || ""}
+                        required={!["differentiator", "problem"].includes(key)}
+                        onChange={(e) =>
+                          setDraft({ ...draft, [key]: e.target.value })
+                        }
+                      />
+                    </label>
+                  ))}
                 <button disabled={!contextReady}>Confirm my brand</button>
               </fieldset>
             </form>

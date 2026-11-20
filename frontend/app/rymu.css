@@ -1376,3 +1376,20 @@ p,
 .journey-guide-location {
   font-size: 0.875rem;
 }
+
+.choice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+.choice-chips button {
+  min-height: 44px;
+  white-space: normal;
+}
+.choice-chips button[aria-pressed="true"] {
+  background: #eee9ff;
+  border-color: #35239c;
+  color: #291b7b;
+  box-shadow: inset 0 0 0 1px #35239c;
+}

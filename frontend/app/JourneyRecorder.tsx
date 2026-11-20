@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { openCamera, makeRecorder, recordingError } from "./recording";
 export default function JourneyRecorder({
   disabled,
   onReady,
@@ -51,30 +52,14 @@ export default function JourneyRecorder({
     const current = ++version.current;
     setRequesting(true);
     try {
-      if (
-        !navigator.mediaDevices?.getUserMedia ||
-        typeof MediaRecorder === "undefined"
-      )
-        throw new Error(
-          "Camera recording needs HTTPS and a supported browser. You can upload a recording instead.",
-        );
-      const capture = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: { width: { ideal: 1920 }, height: { ideal: 1080 } },
-      });
+      const capture = await openCamera(true);
       if (!mounted.current || current !== version.current) {
         capture.getTracks().forEach((track) => track.stop());
         return;
       }
       stream.current = capture;
       onReady(null);
-      const mime = ["video/mp4", "video/webm"].find((value) =>
-        MediaRecorder.isTypeSupported(value),
-      );
-      const rec = new MediaRecorder(
-        capture,
-        mime ? { mimeType: mime, videoBitsPerSecond: 2000000 } : undefined,
-      );
+      const rec = makeRecorder(capture);
       recorder.current = rec;
       let chunks: Blob[] = [],
         bytes = 0,
@@ -100,7 +85,9 @@ export default function JourneyRecorder({
           !bytes
         )
           return;
-        const type = rec.mimeType.split(";")[0];
+        const type = (rec.mimeType || chunks[0]?.type || "video/webm").split(
+          ";",
+        )[0];
         onReady(
           new File(
             chunks,
@@ -124,12 +111,7 @@ export default function JourneyRecorder({
       timer.current = setTimeout(stop, 120000);
     } catch (e) {
       stop();
-      if (mounted.current)
-        setError(
-          e instanceof Error
-            ? e.message
-            : "Camera access failed. Upload a recording instead.",
-        );
+      if (mounted.current) setError(recordingError(e));
     } finally {
       if (mounted.current) setRequesting(false);
     }

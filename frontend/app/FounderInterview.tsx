@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { openCamera, makeRecorder, recordingError } from "./recording";
 const prompts = [
   "Introduce yourself and tell us why you started your company.",
   "What problem do you solve, and how does your solution work?",
@@ -37,6 +38,7 @@ export default function FounderInterview({
     [approved, setApproved] = useState(false),
     [prepared, setPrepared] = useState(false);
   const requestVersion = useRef(0);
+  const contentVersion = useRef(0);
   const recorder = useRef<MediaRecorder | null>(null),
     stream = useRef<MediaStream | null>(null),
     preview = useRef<HTMLVideoElement | null>(null),
@@ -77,6 +79,7 @@ export default function FounderInterview({
   }, [recording]);
   function reset() {
     requestVersion.current++;
+    contentVersion.current++;
     stop();
     setUrl("");
     setSample(false);
@@ -91,22 +94,11 @@ export default function FounderInterview({
   }
   async function record() {
     setError("");
-    if (
-      !navigator.mediaDevices?.getUserMedia ||
-      typeof MediaRecorder === "undefined"
-    ) {
-      setError(
-        "Recording is unavailable in this browser. Upload a video or use the sample interview. Camera access requires localhost or HTTPS.",
-      );
-      return;
-    }
     const version = ++requestVersion.current;
+    const recordingVersion = contentVersion.current;
     setRequesting(true);
     try {
-      const capture = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
+      const capture = await openCamera();
       if (
         !mounted.current ||
         !isActive.current ||
@@ -116,7 +108,7 @@ export default function FounderInterview({
         return;
       }
       stream.current = capture;
-      const rec = new MediaRecorder(capture);
+      const rec = makeRecorder(capture);
       recorder.current = rec;
       let chunks: Blob[] = [];
       let bytes = 0;
@@ -138,7 +130,11 @@ export default function FounderInterview({
       rec.onstop = () => {
         capture.getTracks().forEach((t) => t.stop());
         if (timer.current) clearTimeout(timer.current);
-        if (mounted.current && !oversized) {
+        if (
+          mounted.current &&
+          recordingVersion === contentVersion.current &&
+          !oversized
+        ) {
           setRecording(false);
           if (!chunks.length) {
             setError(
@@ -152,6 +148,8 @@ export default function FounderInterview({
         }
       };
       rec.onerror = () => {
+        oversized = true;
+        chunks = [];
         stop();
         setError("Recording failed. Please try uploading a video.");
       };
@@ -164,12 +162,9 @@ export default function FounderInterview({
       setPrepared(false);
       setApproved(false);
       timer.current = setTimeout(stop, 180000);
-    } catch {
+    } catch (error) {
       stream.current?.getTracks().forEach((t) => t.stop());
-      if (mounted.current)
-        setError(
-          "Camera or microphone access was unavailable. Allow access in your browser, upload a video, or use the sample interview.",
-        );
+      if (mounted.current) setError(recordingError(error));
     } finally {
       if (mounted.current) setRequesting(false);
     }
@@ -216,9 +211,9 @@ export default function FounderInterview({
               <h3>
                 {personal
                   ? [
-                      "Introduce yourself and tell us the story behind your personal brand.",
-                      "What topics do you know well, and what do you want to be known for?",
-                      "Who do you want to reach, and what makes your perspective useful?",
+                      "Tell us about yourself and what you enjoy.",
+                      "What would you like to post about?",
+                      "Who would enjoy your posts?",
                       "Explain a topic you care about in your natural speaking style.",
                       prompts[4],
                     ][question]
@@ -268,7 +263,9 @@ export default function FounderInterview({
             {!recording && (
               <>
                 <button type="button" disabled={requesting} onClick={record}>
-                  Record founder interview
+                  {personal
+                    ? "Record my interview"
+                    : "Record founder interview"}
                 </button>
                 <label>
                   Or upload your interview video

@@ -2,6 +2,11 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import AnswerGuide from "./AnswerGuide";
+import ChoiceChips, {
+  interestChoices,
+  audienceChoices,
+  styleChoices,
+} from "./ChoiceChips";
 
 type BrandData = {
   founder_name: string;
@@ -446,7 +451,13 @@ export default function GrowthTeam({
     await action(async () => {
       await api(`/v1/projects/${projectId}/brand`, orgId, {
         ...form,
-        expertise: lines(form.expertise.join("\n")),
+        story: personal
+          ? form.story.trim() ||
+            `I want to share posts about ${lines(form.content_pillars.join("\n")).join(", ")}.`
+          : form.story,
+        expertise: lines(
+          (personal ? form.content_pillars : form.expertise).join("\n"),
+        ),
         content_pillars: lines(form.content_pillars.join("\n")),
         proof_points: lines(form.proof_points.join("\n")),
         avoid_topics: lines(form.avoid_topics.join("\n")),
@@ -525,7 +536,7 @@ export default function GrowthTeam({
         <span className="eyebrow">PERSONAL BRAND STUDIO</span>
         <h2>
           {personal
-            ? "Teach your employee your story and voice."
+            ? "Tell us about you."
             : "Teach your growth team who you are."}
         </h2>
         <p>
@@ -566,7 +577,7 @@ export default function GrowthTeam({
                   }
                 />
               </label>
-              <label>
+              <label hidden={personal}>
                 {personal
                   ? "Your website (optional)"
                   : "Product website (optional)"}
@@ -579,24 +590,28 @@ export default function GrowthTeam({
                 />
               </label>
             </div>
-            <label>
+            <label hidden={personal}>
               {personal ? "Your story" : "Your founder story"}
               <textarea
-                required
+                required={!personal}
                 minLength={20}
                 maxLength={4000}
-                placeholder="Why did you start? What have you personally learned?"
+                placeholder={
+                  personal
+                    ? "Your interests, experiences and what you enjoy sharing."
+                    : "Why did you start? What have you personally learned?"
+                }
                 aria-label={personal ? "Your story" : "Your founder story"}
                 value={form.story}
                 onChange={(e) => setForm({ ...form, story: e.target.value })}
               />
             </label>
             <div className="grid">
-              <div>
+              <div hidden={personal}>
                 <label>
                   What do you know well?
                   <textarea
-                    required
+                    required={!personal}
                     aria-label="What do you know well?"
                     aria-describedby="brand-skills-help"
                     placeholder={
@@ -630,6 +645,24 @@ export default function GrowthTeam({
                 />
               </div>
               <div>
+                {personal && (
+                  <ChoiceChips
+                    label="Pick your interests"
+                    options={interestChoices}
+                    selected={form.content_pillars}
+                    onChoose={(topic) =>
+                      setForm((f) => ({
+                        ...f,
+                        content_pillars: f.content_pillars.includes(topic)
+                          ? f.content_pillars.filter((v) => v !== topic)
+                          : [
+                              ...lines(f.content_pillars.join("\n")),
+                              topic,
+                            ].slice(0, 5),
+                      }))
+                    }
+                  />
+                )}
                 <label>
                   What topics should Rymu post about?
                   <textarea
@@ -637,7 +670,9 @@ export default function GrowthTeam({
                     aria-label="What topics should Rymu post about?"
                     aria-describedby="brand-topics-help"
                     placeholder={
-                      "For example:\nSimple security tips\nLessons from building a business"
+                      personal
+                        ? "For example:\nEveryday fitness\nBooks I love\nLearning to cook"
+                        : "For example:\nSimple security tips\nLessons from building a business"
                     }
                     value={form.content_pillars.join("\n")}
                     onChange={(e) =>
@@ -658,15 +693,36 @@ export default function GrowthTeam({
                     new line.
                   </small>
                 </label>
-                <AnswerGuide
-                  kind="topics"
-                  existing={form.content_pillars.join("\n")}
-                  onUse={(answer) =>
-                    setForm({ ...form, content_pillars: lines(answer) })
-                  }
-                />
+                {!personal && (
+                  <AnswerGuide
+                    kind="topics"
+                    existing={form.content_pillars.join("\n")}
+                    onUse={(answer) =>
+                      setForm({ ...form, content_pillars: lines(answer) })
+                    }
+                  />
+                )}
               </div>
             </div>
+            {personal && (
+              <ChoiceChips
+                label="Pick your style"
+                options={styleChoices}
+                selected={form.voice.split(", ")}
+                onChoose={(style) =>
+                  setForm((f) => {
+                    const values = f.voice.split(", ").filter(Boolean);
+                    return {
+                      ...f,
+                      voice: (values.includes(style)
+                        ? values.filter((v) => v !== style)
+                        : [...values, style]
+                      ).join(", "),
+                    };
+                  })
+                }
+              />
+            )}
             <label>
               How should Rymu write your posts?
               <input
@@ -684,19 +740,41 @@ export default function GrowthTeam({
                 professional.
               </small>
             </label>
-            <AnswerGuide
-              kind="style"
-              existing={form.voice}
-              onUse={(answer) => setForm({ ...form, voice: answer })}
-            />
+            {!personal && (
+              <AnswerGuide
+                kind="style"
+                existing={form.voice}
+                onUse={(answer) => setForm({ ...form, voice: answer })}
+              />
+            )}
+            {personal && (
+              <ChoiceChips
+                label="Pick your audience"
+                options={audienceChoices}
+                selected={[form.positioning]}
+                onChoose={(audience) =>
+                  setForm({ ...form, positioning: audience })
+                }
+              />
+            )}
             <label>
-              Who do you help, and how?
+              {personal
+                ? "Who would enjoy your posts?"
+                : "Who do you help, and how?"}
               <textarea
                 required
                 minLength={10}
                 maxLength={1500}
-                placeholder="For example: I help small businesses keep their websites safe with simple security tools."
-                aria-label="Who do you help, and how?"
+                placeholder={
+                  personal
+                    ? "For example: People starting their fitness journey."
+                    : "For example: I help small businesses keep their websites safe with simple security tools."
+                }
+                aria-label={
+                  personal
+                    ? "Who would enjoy your posts?"
+                    : "Who do you help, and how?"
+                }
                 aria-describedby="brand-audience-help"
                 value={form.positioning}
                 onChange={(e) =>
@@ -704,17 +782,20 @@ export default function GrowthTeam({
                 }
               />
               <small id="brand-audience-help">
-                Tell us who your work is for, what problem you solve and how you
-                help.
+                {personal
+                  ? "Describe the people you want to reach."
+                  : "Tell us who you help and how."}
               </small>
             </label>
-            <AnswerGuide
-              kind="audience"
-              existing={form.positioning}
-              onUse={(answer) => setForm({ ...form, positioning: answer })}
-            />
+            {!personal && (
+              <AnswerGuide
+                kind="audience"
+                existing={form.positioning}
+                onUse={(answer) => setForm({ ...form, positioning: answer })}
+              />
+            )}
             <div className="grid">
-              <label>
+              <label hidden={personal}>
                 Proof points you can substantiate (optional, one per line)
                 <textarea
                   aria-label="Proof points you can substantiate (optional, one per line)"
@@ -734,7 +815,9 @@ export default function GrowthTeam({
                 />
               </label>
               <label>
-                Topics or claims to avoid (optional, one per line)
+                {personal
+                  ? "Anything to avoid? (optional)"
+                  : "Topics or claims to avoid (optional, one per line)"}
                 <textarea
                   aria-label="Topics or claims to avoid (optional, one per line)"
                   value={form.avoid_topics.join("\n")}
