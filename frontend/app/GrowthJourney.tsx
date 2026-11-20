@@ -310,9 +310,12 @@ export default function GrowthJourney({
   const captionDirty =
     script !== journey?.script || caption !== journey?.caption;
   return (
-    <section className="panel growth-journey" aria-label="Your growth journey">
+    <section
+      className="panel growth-journey"
+      aria-label="Create and schedule a video"
+    >
       <span className="eyebrow">FROM YOUR STORY TO YOUR NEXT CUSTOMER</span>
-      <h2>Your growth journey</h2>
+      <h2>Create and schedule a video</h2>
       <p>
         Interview → confirm your brand → research → finished video → approve and
         schedule → real results.

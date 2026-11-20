@@ -1,6 +1,6 @@
 # Connected growth journey
 
-The **Your growth journey** navigation item and Home action connect one full path: a private interview, transcription and editable brief, explicit brand confirmation, automatic web research and its confirmation checkpoint, a finished Tavus video, owner-approved scheduling to a Facebook Page, and observed Facebook results. This is the first supported publishing path; it does not add Instagram, TikTok or LinkedIn publishing. Existing tools and labeled demos remain separate.
+The **Your growth journey** navigation item and Home link provide an informational guide with no forms or recording actions. The operational workflow lives in **Content studio → Create a video from your interview** and connects one full path: a private interview, transcription and editable brief, explicit brand confirmation, automatic web research and its confirmation checkpoint, a finished Tavus video, owner-approved scheduling to a Facebook Page, and observed Facebook results. This is the first supported publishing path; it does not add Instagram, TikTok or LinkedIn publishing. Existing tools and labeled demos remain separate.
 
 ## What runs
 

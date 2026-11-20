@@ -163,7 +163,14 @@ def journey_flow(page, project_id):
         page.get_by_role("navigation", name="Workspace sections").get_by_role(
             "button", name="Your growth journey", exact=True
         ).click()
-        region = page.get_by_role("region", name="Your growth journey", exact=True)
+        guide = page.get_by_role("region", name="How your growth journey works")
+        expect(guide).to_be_visible()
+        expect(guide.locator("button, input, textarea, select, form")).to_have_count(0)
+        page.get_by_role("navigation", name="Workspace sections").get_by_role(
+            "button", name="Content studio", exact=True
+        ).click()
+        page.get_by_text("Create a video from your interview", exact=True).click()
+        region = page.get_by_role("region", name="Create and schedule a video", exact=True)
         expect(
             region.get_by_role(
                 "button", name="Upload interview and prepare my brief", exact=True
