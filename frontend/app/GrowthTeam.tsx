@@ -2,6 +2,11 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import AnswerGuide from "./AnswerGuide";
+import ChoiceChips, {
+  interestChoices,
+  audienceChoices,
+  styleChoices,
+} from "./ChoiceChips";
 
 type BrandData = {
   founder_name: string;
@@ -446,6 +451,10 @@ export default function GrowthTeam({
     await action(async () => {
       await api(`/v1/projects/${projectId}/brand`, orgId, {
         ...form,
+        story: personal
+          ? form.story.trim() ||
+            `I want to share posts about ${lines(form.content_pillars.join("\n")).join(", ")}.`
+          : form.story,
         expertise: lines(
           (personal ? form.content_pillars : form.expertise).join("\n"),
         ),
@@ -581,10 +590,10 @@ export default function GrowthTeam({
                 />
               </label>
             </div>
-            <label>
+            <label hidden={personal}>
               {personal ? "Your story" : "Your founder story"}
               <textarea
-                required
+                required={!personal}
                 minLength={20}
                 maxLength={4000}
                 placeholder={
@@ -636,6 +645,24 @@ export default function GrowthTeam({
                 />
               </div>
               <div>
+                {personal && (
+                  <ChoiceChips
+                    label="Pick your interests"
+                    options={interestChoices}
+                    selected={form.content_pillars}
+                    onChoose={(topic) =>
+                      setForm((f) => ({
+                        ...f,
+                        content_pillars: f.content_pillars.includes(topic)
+                          ? f.content_pillars.filter((v) => v !== topic)
+                          : [
+                              ...lines(f.content_pillars.join("\n")),
+                              topic,
+                            ].slice(0, 5),
+                      }))
+                    }
+                  />
+                )}
                 <label>
                   What topics should Rymu post about?
                   <textarea
@@ -666,15 +693,36 @@ export default function GrowthTeam({
                     new line.
                   </small>
                 </label>
-                <AnswerGuide
-                  kind="topics"
-                  existing={form.content_pillars.join("\n")}
-                  onUse={(answer) =>
-                    setForm({ ...form, content_pillars: lines(answer) })
-                  }
-                />
+                {!personal && (
+                  <AnswerGuide
+                    kind="topics"
+                    existing={form.content_pillars.join("\n")}
+                    onUse={(answer) =>
+                      setForm({ ...form, content_pillars: lines(answer) })
+                    }
+                  />
+                )}
               </div>
             </div>
+            {personal && (
+              <ChoiceChips
+                label="Pick your style"
+                options={styleChoices}
+                selected={form.voice.split(", ")}
+                onChoose={(style) =>
+                  setForm((f) => {
+                    const values = f.voice.split(", ").filter(Boolean);
+                    return {
+                      ...f,
+                      voice: (values.includes(style)
+                        ? values.filter((v) => v !== style)
+                        : [...values, style]
+                      ).join(", "),
+                    };
+                  })
+                }
+              />
+            )}
             <label>
               How should Rymu write your posts?
               <input
@@ -692,11 +740,23 @@ export default function GrowthTeam({
                 professional.
               </small>
             </label>
-            <AnswerGuide
-              kind="style"
-              existing={form.voice}
-              onUse={(answer) => setForm({ ...form, voice: answer })}
-            />
+            {!personal && (
+              <AnswerGuide
+                kind="style"
+                existing={form.voice}
+                onUse={(answer) => setForm({ ...form, voice: answer })}
+              />
+            )}
+            {personal && (
+              <ChoiceChips
+                label="Pick your audience"
+                options={audienceChoices}
+                selected={[form.positioning]}
+                onChoose={(audience) =>
+                  setForm({ ...form, positioning: audience })
+                }
+              />
+            )}
             <label>
               {personal
                 ? "Who would enjoy your posts?"
@@ -734,8 +794,8 @@ export default function GrowthTeam({
                 onUse={(answer) => setForm({ ...form, positioning: answer })}
               />
             )}
-            <div className="grid" hidden={personal}>
-              <label>
+            <div className="grid">
+              <label hidden={personal}>
                 Proof points you can substantiate (optional, one per line)
                 <textarea
                   aria-label="Proof points you can substantiate (optional, one per line)"
@@ -755,7 +815,9 @@ export default function GrowthTeam({
                 />
               </label>
               <label>
-                Topics or claims to avoid (optional, one per line)
+                {personal
+                  ? "Anything to avoid? (optional)"
+                  : "Topics or claims to avoid (optional, one per line)"}
                 <textarea
                   aria-label="Topics or claims to avoid (optional, one per line)"
                   value={form.avoid_topics.join("\n")}

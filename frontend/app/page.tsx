@@ -13,6 +13,7 @@ import RymuBrand from "./RymuBrand";
 import CreationChoices from "./CreationChoices";
 import GrowthJourney from "./GrowthJourney";
 import GrowthJourneyGuide from "./GrowthJourneyGuide";
+import ChoiceChips, { interestChoices, audienceChoices } from "./ChoiceChips";
 import EmployeeOverview, {
   WorkspaceView,
   workspaceViews,
@@ -251,7 +252,10 @@ export default function Home() {
       personal_goal: personalGoal,
       personal_target: personalTarget,
       product_name: name,
-      description,
+      description:
+        projectMode === "personal"
+          ? `Posts about ${description}.`
+          : description,
       problem: projectMode === "personal" ? "" : problem,
       audience,
       goal_customers: goal,
@@ -584,13 +588,13 @@ export default function Home() {
                     {[
                       {
                         value: "business",
-                        title: "My business",
-                        text: "Find customers for what I’m building.",
+                        title: "Grow my business",
+                        text: "Build my brand and find customers.",
                       },
                       {
                         value: "personal",
-                        title: "My personal brand",
-                        text: "Grow my audience and find opportunities.",
+                        title: "Grow a following",
+                        text: "Share my interests. No business needed.",
                       },
                     ].map((choice) => (
                       <label
@@ -695,18 +699,43 @@ export default function Home() {
                       />
                     </label>
                   )}
+                  {projectMode === "personal" && (
+                    <ChoiceChips
+                      label="Choose your interests"
+                      options={interestChoices}
+                      selected={description.split(", ")}
+                      onChoose={(topic) =>
+                        setDescription((current) => {
+                          const values = current.split(", ").filter(Boolean);
+                          return (
+                            values.includes(topic)
+                              ? values.filter((v) => v !== topic)
+                              : [...values, topic]
+                          ).join(", ");
+                        })
+                      }
+                    />
+                  )}
                   <label>
                     {projectMode === "personal"
                       ? "What would you like to post about?"
                       : "What does it do?"}
                     <textarea
                       required
-                      minLength={10}
-                      maxLength={2000}
+                      minLength={projectMode === "personal" ? 2 : 10}
+                      maxLength={projectMode === "personal" ? 1900 : 2000}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                     />
                   </label>
+                  {projectMode === "personal" && (
+                    <ChoiceChips
+                      label="Choose your audience"
+                      options={audienceChoices}
+                      selected={[audience]}
+                      onChoose={setAudience}
+                    />
+                  )}
                   <div className="grid">
                     <label>
                       {projectMode === "personal"
