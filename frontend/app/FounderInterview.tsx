@@ -186,9 +186,8 @@ export default function FounderInterview({
       </span>
       <h2>Your story. Your voice. Your digital twin.</h2>
       <p>
-        Explore the complete onboarding flow before connecting HeyGen. Recording
-        works locally; avatar creation and rendering are placeholders. No video,
-        voice or notes are uploaded or sent to HeyGen.
+        HeyGen demo: recordings stay on your device. No uploads, avatar training
+        or rendering.
       </p>
       <ol className="interview-steps" aria-label="Interview progress">
         {steps.map((name, i) => (
@@ -207,10 +206,8 @@ export default function FounderInterview({
           <>
             <h3>1. Meet your growth employee</h3>
             <p>
-              Use good lighting, face the camera and speak naturally in your
-              usual accent. This footage can capture your face, expressions,
-              mannerisms and voice as reference; this demo does not analyze or
-              clone them.
+              Face the camera in good light and speak naturally. This demo
+              records but does not analyze or clone you.
             </p>
             <div className="interview-prompt">
               <small>
@@ -254,8 +251,7 @@ export default function FounderInterview({
                   aria-label="Live interview camera preview"
                 />
                 <p role="status">
-                  Recording locally · stops after 3 minutes. Move through the
-                  questions while recording.
+                  Recording on your device · 3-minute limit.
                   <output
                     aria-label="Recorded interview size"
                     data-recorded-bytes={recordedBytes}
@@ -361,7 +357,7 @@ export default function FounderInterview({
             <p>
               {sample
                 ? "These are fictional example notes. Edit them to explore the flow."
-                : "Automatic transcription is not connected in this demo. Watch your recording and enter the facts and delivery preferences you want to confirm."}{" "}
+                : "No demo transcription. Add your interview notes and speaking preferences."}{" "}
               These notes do not update your approved founder profile.
             </p>
             <label>
@@ -388,8 +384,8 @@ export default function FounderInterview({
               />
             </label>
             <p>
-              Facial appearance is not used to infer personality. You confirm
-              the facts and speaking preferences.
+              You confirm your facts and speaking style. No facial personality
+              analysis.
             </p>
             <button
               type="button"
@@ -404,9 +400,8 @@ export default function FounderInterview({
           <>
             <h3>3. Review face and voice consent</h3>
             <p>
-              A live integration will require the founder’s explicit
-              authorization and HeyGen’s own identity/consent process. A general
-              interview may not meet the provider’s filming requirements.
+              Live cloning requires your permission and HeyGen’s identity,
+              consent and filming checks.
             </p>
             <label className="check">
               <input
@@ -418,8 +413,7 @@ export default function FounderInterview({
               it in this demo.
             </label>
             <p>
-              This checkbox only advances the preview. It is not stored as legal
-              consent and does not authorize a real clone or public posting.
+              Demo only. This checkbox does not authorize cloning or posting.
             </p>
             <button
               type="button"
@@ -452,9 +446,8 @@ export default function FounderInterview({
               </li>
             </ul>
             <p>
-              In production, this step submits authorized media, waits for
-              provider training and creates a test video. No provider request
-              occurs here.
+              A live setup trains your avatar and renders a sample. This demo
+              makes no provider requests.
             </p>
             <button
               type="button"
@@ -483,9 +476,8 @@ export default function FounderInterview({
               matters to our customers.
             </blockquote>
             <p>
-              In a live rendered sample, check pronunciation, accent, lip sync,
-              facial movement and overall delivery before approving. This
-              placeholder cannot demonstrate cloning quality.
+              A real sample lets you check voice, accent, lip sync and movement.
+              This placeholder does not show cloning quality.
             </p>
             <label className="check">
               <input
@@ -497,10 +489,8 @@ export default function FounderInterview({
             </label>
             {approved && (
               <p className="notice" role="status">
-                Demo onboarding complete. A real digital twin still needs a
-                connected HeyGen account, verified consent, training and
-                approval of a rendered sample. Content generation and publishing
-                have not been activated.
+                Demo complete. Live cloning needs HeyGen, verified consent,
+                training and an approved sample. Publishing is off.
               </p>
             )}
             <button
@@ -531,10 +521,9 @@ export default function FounderInterview({
         )}
       </fieldset>
       <small>
-        Reloading or switching company removes this interview preview. Leaving
-        this section stops camera capture. You can delete the local recording at
-        any time. Real media storage, transcription, provider enrollment and
-        video rendering require the live integration.
+        This preview resets on reload or company change. Leaving stops the
+        camera. Delete your local recording anytime. Live processing requires
+        provider setup.
       </small>
     </section>
   );

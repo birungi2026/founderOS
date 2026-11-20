@@ -9,7 +9,7 @@ const guides = {
       "What have you learned through work or life?",
     ],
     examples: ["Building websites", "Keeping customer data safe"],
-    help: "You don’t need a qualification. Think about things you can explain or show someone.",
+    help: "What can you teach or explain?",
   },
   topics: {
     title: "Choose useful topics",
@@ -18,13 +18,13 @@ const guides = {
       "What questions does your audience ask?",
     ],
     examples: ["Simple security tips", "How to avoid common website mistakes"],
-    help: "Write one topic per line. Start with a few you can talk about comfortably; you can change them later.",
+    help: "One topic per line. You can change these later.",
   },
   style: {
     title: "Choose how your posts should feel",
     prompts: ["Anything else about your writing style?"],
     examples: ["Short sentences, real examples and no technical words"],
-    help: "Choose the words that sound like you. You can pick more than one.",
+    help: "Pick the words that sound like you.",
   },
   audience: {
     title: "Explain who you help",
@@ -38,7 +38,7 @@ const guides = {
       "Keeping their websites safe",
       "Providing simple security tools and practical tips",
     ],
-    help: "A few words for each question are enough. Rymu will arrange them into an answer you can edit.",
+    help: "Use short answers. Rymu combines them for you to edit.",
   },
 };
 const styles = ["Friendly", "Professional", "Simple", "Funny", "Direct"];
@@ -141,8 +141,7 @@ export default function AnswerGuide({
             : "Use this draft answer"}
         </button>
         <small>
-          This guide uses only what you enter. It won’t save or approve your
-          profile. You can edit the answer after adding it.
+          Uses your answers only. Review and edit before saving your profile.
         </small>
       </div>
     </details>

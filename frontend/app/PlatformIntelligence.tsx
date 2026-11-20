@@ -47,10 +47,9 @@ export default function PlatformIntelligence({
       <summary>Platform growth intelligence</summary>
       <h2>Study the platforms. Test what works.</h2>
       <p>
-        Published guidance and account observations help your employee propose
-        experiments. Private ranking weights are unknown. New automatic research
-        runs check for public updates; findings need your confirmation before
-        content creation.
+        Rymu uses public guidance and account data to suggest experiments.
+        Private ranking rules are unknown. Confirm new findings before content
+        creation.
       </p>
       <button
         type="button"
@@ -102,10 +101,7 @@ export default function PlatformIntelligence({
           <p>{item.success_metric}</p>
           <h3>Available account evidence</h3>
           {!item.account_data.length ? (
-            <p>
-              No active connected account snapshot. These suggestions are not
-              personalized performance findings.
-            </p>
+            <p>Connect an account for personalized suggestions.</p>
           ) : (
             item.account_data.map((a, i) => (
               <div key={i}>

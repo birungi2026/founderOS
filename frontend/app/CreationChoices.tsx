@@ -13,7 +13,7 @@ export default function CreationChoices({
     >
       <div className="studio-section-heading">
         <div>
-          <span className="eyebrow">A LITTLE INSPIRATION. A LOT OF YOU.</span>
+          <span className="eyebrow">CREATE WITH RYMU</span>
           <h2>What will you create next?</h2>
         </div>
         <span className="soft-label">Made for your brand</span>
@@ -33,8 +33,8 @@ export default function CreationChoices({
           </span>
           <span className="creation-copy">
             <span className="format-kind">VIDEO SCRIPT</span>
-            <strong>Turn your ideas into video</strong>
-            <span>Hooks, scenes and captions for your next short.</span>
+            <strong>Plan a video</strong>
+            <span>Hooks, scenes and captions.</span>
             <span className="choice-link">
               Open video studio <Icon name="arrow" size={16} />
             </span>
@@ -58,8 +58,8 @@ export default function CreationChoices({
           </span>
           <span className="creation-copy">
             <span className="format-kind">SOCIAL POSTS</span>
-            <strong>Show up with something useful</strong>
-            <span>On-brand drafts for the people you want to reach.</span>
+            <strong>Create a post</strong>
+            <span>Drafts for your audience.</span>
             <span className="choice-link">
               Open content calendar <Icon name="arrow" size={16} />
             </span>
@@ -80,8 +80,8 @@ export default function CreationChoices({
           </span>
           <span className="creation-copy">
             <span className="format-kind">RESEARCH & IDEAS</span>
-            <strong>Find your audience’s next question</strong>
-            <span>Explore evidence, competitors and fresh angles.</span>
+            <strong>Find content ideas</strong>
+            <span>Research audiences and competitors.</span>
             <span className="choice-link">
               Open research radar <Icon name="arrow" size={16} />
             </span>
@@ -90,9 +90,8 @@ export default function CreationChoices({
       </div>
       {!compact && (
         <p className="creation-hint">
-          These are starting points, not generated content. Your employee uses
-          your approved brand and research. Video output is a script until
-          rendering is connected.
+          Choose a starting point. Rymu uses your approved brand and research.
+          Videos need connected rendering.
         </p>
       )}
     </section>

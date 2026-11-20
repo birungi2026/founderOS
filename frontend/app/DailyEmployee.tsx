@@ -222,9 +222,8 @@ export default function DailyEmployee({
       <span className="eyebrow">THE BUSINESS OUTCOME</span>
       <h2>Your first {funnel?.target_customers || 50} paying customers.</h2>
       <p>
-        The growth employee should turn relevant attention into conversations,
-        trials and purchases. Followers and impressions stay separate from
-        confirmed customers.
+        Turn attention into conversations, trials and sales. Followers are
+        tracked separately.
       </p>
       {error && (
         <p role="alert" className="error">
@@ -264,18 +263,16 @@ export default function DailyEmployee({
               ))}
           </div>
           <small>
-            Customer counts are founder-confirmed records, not yet verified
-            against a payment provider. A source or lead is never counted as a
-            sale.
+            You confirm customer records. Payments are not verified
+            automatically; leads are not sales.
           </small>
         </>
       )}
       <details className="daily-settings" open={section === "routine"}>
         <summary>Content routine: daily, weekly or monthly</summary>
         <p>
-          Set a routine once. The employee refreshes research and prepares your
-          chosen number of drafts plus a video script on each selected day.
-          Actual publishing needs a connected channel and separate approval.
+          Choose when Rymu researches and prepares drafts and a video script.
+          Posting needs a connected account and your approval.
         </p>
         <form
           onSubmit={(e) =>
@@ -421,9 +418,7 @@ export default function DailyEmployee({
             </div>
             {!available && (
               <p>
-                The workspace's search service is not connected yet. A server
-                administrator must configure it before automatic research can
-                run.
+                Ask your administrator to connect search for automatic research.
               </p>
             )}
             {isOwner && (
@@ -446,8 +441,7 @@ export default function DailyEmployee({
           </p>
         )}
         <small>
-          Recurring work uses your organization's monthly workflow allowance. A
-          paused or missed day is not backfilled with a burst of posts.
+          Uses your monthly workflow allowance. Missed days are skipped.
         </small>
       </details>
       <details open={section === "customers"}>
@@ -516,9 +510,8 @@ export default function DailyEmployee({
         </div>
         {leads.length === 0 && (
           <p>
-            No customers are recorded yet. Research can suggest possible buyers;
-            qualify them before counting them as leads or preparing individual
-            outreach.
+            No customers yet. Check suggested buyers before adding them as
+            leads.
           </p>
         )}
       </details>

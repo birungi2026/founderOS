@@ -50,9 +50,7 @@ export default function CompanyBrief({
         expected_version: version,
       });
       setProfile(result);
-      setNotice(
-        "Company brief saved. The employee will research these facts and ask you to confirm its findings before using them in content.",
-      );
+      setNotice("Saved. Confirm research findings before content creation.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed");
     } finally {
@@ -67,8 +65,7 @@ export default function CompanyBrief({
           : "Company brief: problem, solution, audience and competitors"}
       </summary>
       <p>
-        Give the employee the basics. Differentiation starts as your hypothesis;
-        the research brief will show supporting evidence and unknowns.
+        Share the basics. Research will check what makes your offer different.
       </p>
       {error && (
         <p role="alert" className="error">

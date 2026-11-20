@@ -29,10 +29,8 @@ export default function SocialDemo() {
         <section aria-label="Social connection demo">
           <h3>Demo mode · sample data only</h3>
           <p>
-            Preview connecting, granting access, retrieving posts and
-            disconnecting. No provider credentials are needed. This preview
-            never contacts social platforms, publishes content or adds sample
-            metrics to your real growth workflows.
+            Connection demo. No keys, platform access, publishing or changes to
+            real metrics.
           </p>
           {notice && <p role="status">{notice}</p>}
           {["instagram", "facebook", "linkedin", "tiktok"].map((provider) => (
@@ -55,11 +53,7 @@ export default function SocialDemo() {
               aria-label="Demo account authorization"
             >
               <h3>Simulated {label(pending)} authorization</h3>
-              <p>
-                In the live flow, the platform opens its own login and
-                permission screen. This is a Rymu preview, not a Meta login
-                page.
-              </p>
+              <p>Demo screen. Real connections use the platform’s own login.</p>
               <p>
                 Sample account:{" "}
                 {pending === "instagram"
@@ -174,17 +168,15 @@ export default function SocialDemo() {
                     </>
                   )}
                   <p>
-                    <strong>Next in the live workflow:</strong> retrieved
-                    account data informs research and content drafts. Founder
-                    research confirmation and publishing approval still apply.
+                    <strong>Next in the live workflow:</strong> account data
+                    informs drafts. Research and publishing still need approval.
                   </p>
                 </div>
               )}
             </article>
           ))}
           <p>
-            Preview state resets when you reload or switch projects. Real
-            connections are managed separately below.
+            Demo resets on reload or project change. Real connections are below.
           </p>
         </section>
       )}

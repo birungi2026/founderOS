@@ -207,7 +207,7 @@ def main():
         ).to_be_visible()
         interview.get_by_role("checkbox").check()
         expect(
-            interview.get_by_text("Demo onboarding complete.", exact=False)
+            interview.get_by_text("Demo complete.", exact=False)
         ).to_be_visible()
         interview.get_by_role(
             "button", name="Delete local interview and reset demo", exact=True

@@ -137,9 +137,8 @@ export default function JourneyRecorder({
   return (
     <div className="journey-recorder">
       <p>
-        Speak naturally for at least 30 seconds. Explain who you help and how,
-        share your experience, and describe how you want your posts to sound.
-        Recording stops after two minutes.
+        Speak naturally for 30 seconds to 2 minutes. Share who you help, how and
+        your experience.
       </p>
       {error && (
         <p className="error" role="alert">
@@ -171,8 +170,8 @@ export default function JourneyRecorder({
             : "Record my interview"}
       </button>
       <p>
-        Recording stays on your device until you choose to upload it. A provider
-        may require better footage for replica training.
+        Stays on your device until uploaded. Avatar training may need a new
+        recording.
       </p>
     </div>
   );

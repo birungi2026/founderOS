@@ -175,34 +175,34 @@ export default function EmployeeOverview({
         ? {
             view: "content" as const,
             title: "Your research needs confirmation",
-            text: "Review what your employee learned before it uses that information to create content.",
+            text: "Confirm the findings before content creation.",
             button: "Review research",
           }
         : data.reviews
           ? {
               view: "content" as const,
               title: `${data.reviews} drafts need your review`,
-              text: "Review the content, make changes and approve the drafts you want to use.",
+              text: "Edit and approve your drafts.",
               button: "Review content",
             }
           : !data.runStatus
             ? {
                 view: "content" as const,
                 title: "Give your employee its first assignment",
-                text: "Start research from your approved company and founder information. You’ll confirm the findings before content is created.",
+                text: "Research your approved brand, then confirm the findings.",
                 button: "Start first assignment",
               }
             : !data.routine
               ? {
                   view: "routine" as const,
                   title: "Choose when your employee prepares content",
-                  text: "Set daily, weekly or monthly preparation. Publishing remains a separate approval.",
+                  text: "Prepare daily, weekly or monthly. Approve posts separately.",
                   button: "Set working routine",
                 }
               : {
                   view: "content" as const,
                   title: "Check your employee’s latest work",
-                  text: "Open research, content drafts and the latest assignment status.",
+                  text: "View research, drafts and progress.",
                   button: "Open employee work",
                 };
   const steps = [
@@ -534,12 +534,8 @@ export default function EmployeeOverview({
       <details className="workspace-footnote">
         <summary>What’s available in this workspace</summary>
         <p>
-          Research, confirmation, drafts, social account connections and goal
-          tracking are available. Interview capture and avatar onboarding
-          include a labeled demo. Use Content studio for provider-backed
-          interview processing, Tavus videos and approved Facebook Page
-          scheduling. Administrator setup is required; other-channel publishing
-          remains separate.
+          Use Content studio for interviews, Tavus videos and approved Facebook
+          Page posts. Provider setup is required. Demo tools are labeled.
         </p>
       </details>
     </div>

@@ -1,43 +1,38 @@
 const steps = [
   {
-    title: "Get to know you and your business",
+    title: "Know your brand",
     description:
-      "Your story, the people you want to reach and what you offer help Rymu understand your brand. An interview can help capture your own words and speaking style.",
-    location:
-      "Brand profile holds your brand information. Interview tools are in Content studio.",
+      "Share your story, audience and offer. An interview captures your words and style.",
+    location: "Brand profile · Interview tools in Content studio",
   },
   {
-    title: "Check that Rymu understands you",
-    description:
-      "You review your brand information before Rymu uses it. This helps your content reflect what you actually do and how you want to sound.",
-    location:
-      "Your confirmed brand becomes the starting point for your content.",
+    title: "Confirm your brand",
+    description: "Confirm your brand so content reflects your work and voice.",
+    location: "Your approved brand guides your content.",
   },
   {
-    title: "Find useful ideas for your audience",
+    title: "Research your audience",
     description:
-      "With research connected, Rymu looks for relevant news, audience questions and competitor activity. You can check the sources and confirm important findings before they become content.",
-    location: "Research and its sources appear in Content studio.",
+      "Rymu researches news, audience questions and competitors. Check the sources and confirm findings.",
+    location: "Research · Content studio",
   },
   {
     title: "Turn ideas into content",
     description:
-      "Rymu uses your confirmed brand and research to prepare a script and caption. With a connected video provider and your permission, it can also make an avatar video for you to review.",
-    location: "Drafts and finished videos appear in Content studio.",
+      "Rymu creates scripts and captions from approved research. Avatar videos need a connected provider and your consent.",
+    location: "Drafts & videos · Content studio",
   },
   {
-    title: "Share content when you are ready",
+    title: "Approve and schedule",
     description:
-      "You choose the finished video, caption, connected Page and posting time. A post is scheduled only after you approve it. The connected video workflow currently supports Facebook Pages.",
-    location:
-      "Account connections are in Social accounts. Video approval and scheduling are in Content studio.",
+      "Approve your video, caption, Page and time. Video scheduling currently supports Facebook Pages.",
+    location: "Connect · Social accounts. Approve & schedule · Content studio.",
   },
   {
-    title: "Learn what helps your brand grow",
+    title: "Learn from results",
     description:
-      "After a post is published, Rymu checks the available engagement results and uses them to inform future ideas. Likes and comments show interest; paying customers are tracked separately.",
-    location:
-      "Video engagement appears with your published content. Results tracks your wider progress.",
+      "Rymu uses post engagement to improve future ideas. Customers are tracked separately.",
+    location: "Engagement · Published content. Progress · Results.",
   },
 ];
 
@@ -49,10 +44,7 @@ export default function GrowthJourneyGuide() {
     >
       <p className="eyebrow">HOW RYMU HELPS</p>
       <h2>From your story to content that connects.</h2>
-      <p>
-        Here is how the steps fit together. This page is a guide — there is
-        nothing to fill in or record here.
-      </p>
+      <p>Your path from brand setup to results. No action needed here.</p>
       <ol className="journey-guide-steps">
         {steps.map((step, index) => (
           <li key={step.title}>
@@ -67,11 +59,7 @@ export default function GrowthJourneyGuide() {
           </li>
         ))}
       </ol>
-      <p>
-        Rymu helps you work toward steady growth. Reach, follower counts and
-        sales depend on your offer, audience and content; they are not
-        guaranteed.
-      </p>
+      <p>Growth depends on your offer, audience and content.</p>
     </section>
   );
 }

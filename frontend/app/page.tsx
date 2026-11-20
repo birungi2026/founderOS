@@ -800,24 +800,19 @@ export default function Home() {
                   <p>
                     {
                       {
-                        journey:
-                          "A simple guide to how Rymu helps you build your brand and reach the right people.",
-                        overview:
-                          "One next step, current activity and progress toward your goal.",
+                        journey: "How Rymu builds your brand.",
+                        overview: "Your next step and progress.",
                         profile: personal
-                          ? "Share your niche, audience, expertise and voice. A company or paid offer is optional."
-                          : "Confirm your business context and teach your employee your story and voice.",
-                        accounts:
-                          "Grant account access, or try the sample connection flow without API keys.",
-                        content:
-                          "Start an assignment, confirm the research and review the resulting drafts.",
+                          ? "Share your niche, audience and style. A business is optional."
+                          : "Share your business, story and style.",
+                        accounts: "Connect accounts or try the demo.",
+                        content: "Research, review and create.",
                         customers: personal
-                          ? "Track audience growth, subscribers or qualified opportunities against your chosen goal."
-                          : "Track real buyer conversations and confirmed purchases.",
+                          ? "Track your audience and opportunities."
+                          : "Track leads and customers.",
                         routine:
-                          "Choose how often your employee prepares content. This does not enable automatic publishing.",
-                        settings:
-                          "Optional manual sources, standalone tools, metric entry and team administration.",
+                          "Choose when content is prepared. Posting needs approval.",
+                        settings: "Manual tools and team settings.",
                       }[view]
                     }
                   </p>
@@ -974,11 +969,8 @@ export default function Home() {
                   <details className="panel">
                     <summary>Optional sources and research evidence</summary>
                     <p>
-                      The growth employee collects search evidence automatically
-                      when the search service is connected. You can optionally
-                      add your own research here. Search excerpts and supplied
-                      notes are evidence to assess, not independently verified
-                      facts.
+                      Rymu researches automatically when search is connected.
+                      Add optional sources here and check their accuracy.
                     </p>
                     {sources.map((s) => (
                       <article key={s.id}>
@@ -1037,8 +1029,8 @@ export default function Home() {
                     <span className="eyebrow">OPTIONAL / QUICK PLAN</span>
                     <h2>Quick growth plan.</h2>
                     <p>
-                      This standalone tool uses product details. Use the
-                      coordinated team above for a brand-aware weekly campaign.
+                      Uses product details. Use the team workflow for
+                      brand-based campaigns.
                     </p>
                     {canWrite && (
                       <button onClick={() => run(plan)}>
@@ -1077,13 +1069,13 @@ export default function Home() {
                     <h2>Review your campaign content.</h2>
                     {!drafts.length && (
                       <p>
-                        No drafts yet. Start a growth workflow above to prepare
-                        content using your approved founder profile.
+                        No drafts yet. Start a workflow using your approved
+                        brand.
                       </p>
                     )}
                     <p>
-                      Review approves a draft. Owners can then explicitly queue
-                      it. No messages are automatically sent.
+                      Approve drafts before an owner queues them. Nothing is
+                      sent automatically.
                     </p>
                     {drafts.map((d) => (
                       <article key={d.id}>
