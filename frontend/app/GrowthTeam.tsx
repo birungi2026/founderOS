@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api } from "./api";
+import AnswerGuide from "./AnswerGuide";
 
 type BrandData = {
   founder_name: string;
@@ -528,8 +529,8 @@ export default function GrowthTeam({
             : "Teach your growth team who you are."}
         </h2>
         <p>
-          Your story, expertise and voice become shared context for every agent.
-          Website links are saved as references; no website import is performed.
+          Tell Rymu about yourself so it can write posts that fit you. Adding a
+          website saves the link; Rymu does not read the website here.
         </p>
         {error && (
           <p role="alert" className="error">
@@ -592,69 +593,127 @@ export default function GrowthTeam({
               />
             </label>
             <div className="grid">
-              <label>
-                Your expertise (one per line)
-                <textarea
-                  required
-                  aria-label="Your expertise (one per line)"
-                  value={form.expertise.join("\n")}
-                  onChange={(e) =>
-                    setForm({ ...form, expertise: e.target.value.split("\n") })
-                  }
-                  onBlur={() =>
-                    setForm((f) => ({
-                      ...f,
-                      expertise: lines(f.expertise.join("\n")),
-                    }))
+              <div>
+                <label>
+                  What do you know well?
+                  <textarea
+                    required
+                    aria-label="What do you know well?"
+                    aria-describedby="brand-skills-help"
+                    placeholder={
+                      "For example:\nBuilding websites\nKeeping customer data safe"
+                    }
+                    value={form.expertise.join("\n")}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        expertise: e.target.value.split("\n"),
+                      })
+                    }
+                    onBlur={() =>
+                      setForm((f) => ({
+                        ...f,
+                        expertise: lines(f.expertise.join("\n")),
+                      }))
+                    }
+                  />
+                  <small id="brand-skills-help">
+                    List your skills or subjects you can explain. Put each one
+                    on a new line.
+                  </small>
+                </label>
+                <AnswerGuide
+                  kind="skills"
+                  existing={form.expertise.join("\n")}
+                  onUse={(answer) =>
+                    setForm({ ...form, expertise: lines(answer) })
                   }
                 />
-              </label>
-              <label>
-                Content pillars (one per line, up to five)
-                <textarea
-                  required
-                  aria-label="Content pillars (one per line, up to five)"
-                  value={form.content_pillars.join("\n")}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      content_pillars: e.target.value.split("\n"),
-                    })
-                  }
-                  onBlur={() =>
-                    setForm((f) => ({
-                      ...f,
-                      content_pillars: lines(f.content_pillars.join("\n")),
-                    }))
+              </div>
+              <div>
+                <label>
+                  What topics should Rymu post about?
+                  <textarea
+                    required
+                    aria-label="What topics should Rymu post about?"
+                    aria-describedby="brand-topics-help"
+                    placeholder={
+                      "For example:\nSimple security tips\nLessons from building a business"
+                    }
+                    value={form.content_pillars.join("\n")}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        content_pillars: e.target.value.split("\n"),
+                      })
+                    }
+                    onBlur={() =>
+                      setForm((f) => ({
+                        ...f,
+                        content_pillars: lines(f.content_pillars.join("\n")),
+                      }))
+                    }
+                  />
+                  <small id="brand-topics-help">
+                    Choose up to five topics for your posts. Put each topic on a
+                    new line.
+                  </small>
+                </label>
+                <AnswerGuide
+                  kind="topics"
+                  existing={form.content_pillars.join("\n")}
+                  onUse={(answer) =>
+                    setForm({ ...form, content_pillars: lines(answer) })
                   }
                 />
-              </label>
+              </div>
             </div>
             <label>
-              How should your content sound?
+              How should Rymu write your posts?
               <input
+                aria-label="How should Rymu write your posts?"
+                aria-describedby="brand-writing-help"
                 required
                 minLength={3}
                 maxLength={500}
-                placeholder="Direct, practical, warm; use examples instead of jargon"
+                placeholder="For example: Friendly and clear, with short sentences and real examples."
                 value={form.voice}
                 onChange={(e) => setForm({ ...form, voice: e.target.value })}
               />
+              <small id="brand-writing-help">
+                Describe the style you want, such as friendly, funny or
+                professional.
+              </small>
             </label>
+            <AnswerGuide
+              kind="style"
+              existing={form.voice}
+              onUse={(answer) => setForm({ ...form, voice: answer })}
+            />
             <label>
-              Your positioning
+              Who do you help, and how?
               <textarea
                 required
                 minLength={10}
                 maxLength={1500}
-                placeholder="Who do you help, with what problem, and why your approach?"
-                aria-label="Your positioning"
+                placeholder="For example: I help small businesses keep their websites safe with simple security tools."
+                aria-label="Who do you help, and how?"
+                aria-describedby="brand-audience-help"
                 value={form.positioning}
                 onChange={(e) =>
                   setForm({ ...form, positioning: e.target.value })
                 }
               />
+              <small id="brand-audience-help">
+                Tell us who your work is for, what problem you solve and how you
+                help.
+              </small>
             </label>
+            <AnswerGuide
+              kind="audience"
+              existing={form.positioning}
+              onUse={(answer) => setForm({ ...form, positioning: answer })}
+            />
             <div className="grid">
               <label>
                 Proof points you can substantiate (optional, one per line)
