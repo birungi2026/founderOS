@@ -563,13 +563,6 @@ def main():
         expect(page.get_by_label("Problem your company solves", exact=True)).not_to_be_visible()
         expect(page.get_by_label("Competitor websites", exact=True)).not_to_be_visible()
         expect(profile.get_by_label("What do you know well?", exact=True)).not_to_be_visible()
-        profile.get_by_label("Your name", exact=True).fill("Ada Learns")
-        profile.get_by_label("Your story", exact=True).fill("I enjoy learning new skills and sharing everyday lessons with others.")
-        profile.get_by_label("What topics should Rymu post about?", exact=True).fill("Learning to cook\nEveryday fitness")
-        profile.get_by_label("How should Rymu write your posts?", exact=True).fill("Friendly and simple")
-        profile.get_by_label("Who would enjoy your posts?", exact=True).fill("People trying new hobbies")
-        profile.get_by_role("button", name="Save brand version", exact=True).click()
-        expect(profile.get_by_text("Brand version saved.", exact=False)).to_be_visible()
         section("Audience & opportunities")
         page.get_by_label("Current total (self-reported)", exact=True).fill("75")
         page.get_by_role(
@@ -589,17 +582,14 @@ def main():
         page.get_by_label("Your story", exact=True).fill(
             "I mentor junior software engineers and share practical lessons from building real software."
         )
-        page.get_by_label("What do you know well?", exact=True).fill(
-            "Software engineering"
-        )
         page.get_by_label("What topics should Rymu post about?", exact=True).fill(
             "Practical engineering"
         )
         page.get_by_label("How should Rymu write your posts?", exact=True).fill(
             "Practical and encouraging"
         )
-        page.get_by_label("Who do you help, and how?", exact=True).fill(
-            "I help junior engineers learn through practical examples and mentoring."
+        page.get_by_label("Who would enjoy your posts?", exact=True).fill(
+            "People learning software engineering through practical examples."
         )
         page.get_by_role("button", name="Save brand version", exact=True).click()
         page.get_by_role("button", name="Approve brand version 1", exact=True).click()
