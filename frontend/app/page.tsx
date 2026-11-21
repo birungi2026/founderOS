@@ -12,6 +12,10 @@ import PlatformIntelligence from "./PlatformIntelligence";
 import RymuBrand from "./RymuBrand";
 import CreationChoices from "./CreationChoices";
 import GrowthJourney from "./GrowthJourney";
+import WeeklyWorkspace from "./WeeklyWorkspace";
+import PlanUsage from "./PlanUsage";
+import PilotResults from "./PilotResults";
+import ConversionTools from "./ConversionTools";
 import GrowthJourneyGuide from "./GrowthJourneyGuide";
 import ChoiceChips, { interestChoices, audienceChoices } from "./ChoiceChips";
 import EmployeeOverview, {
@@ -30,6 +34,7 @@ type Strategy = {
   citations: { id: string; url: string; title: string }[];
 };
 type Project = {
+  focus?: string;
   id: string;
   product_name: string;
   strategy?: Strategy;
@@ -80,18 +85,24 @@ export default function Home() {
     paying_customers: 0,
   });
   const [problem, setProblem] = useState("");
+  const [focus, setFocus] = useState("general");
   const [projectMode, setProjectMode] = useState("business"),
     [personalGoal, setPersonalGoal] = useState("followers"),
     [personalTarget, setPersonalTarget] = useState(1000);
   const activeProject = projects.find((p) => p.id === projectId);
   const personal = activeProject?.mode === "personal";
-  const goalText = personal
-    ? `Build a relevant audience and reach ${activeProject?.personal_target || 1000} ${(activeProject?.personal_goal || "followers").replaceAll("_", " ")}.`
-    : "Convert qualified leads and followers into our first 50 paying customers.";
+  const goalText =
+    activeProject?.focus === "coach"
+      ? "Build a relevant coaching audience and measure qualified inquiries."
+      : personal
+        ? `Build a relevant audience and reach ${activeProject?.personal_target || 1000} ${(activeProject?.personal_goal || "followers").replaceAll("_", " ")}.`
+        : "Convert qualified leads and followers into our first 50 paying customers.";
   const [pipelineRefresh, setPipelineRefresh] = useState(0);
   const [view, setView] = useState<WorkspaceView>("overview");
   const [navOpen, setNavOpen] = useState(false);
-  const [personalInterviewOpen, setPersonalInterviewOpen] = useState(false);
+  const [reviewJourneyId, setReviewJourneyId] = useState("");
+  const [demoInterviewOpen, setDemoInterviewOpen] = useState(false);
+  const [videoReviewOpen, setVideoReviewOpen] = useState(false);
   const [contentIntent, setContentIntent] = useState<{
     tab: string;
     request: number;
@@ -122,6 +133,8 @@ export default function Home() {
   };
   useEffect(() => {
     setView("overview");
+    setReviewJourneyId("");
+    setVideoReviewOpen(false);
     setContentIntent({ tab: "growth", request: 0 });
   }, [projectId, orgId]);
   useEffect(() => {
@@ -248,6 +261,7 @@ export default function Home() {
   }
   async function create() {
     const p = await api("/projects", orgId, {
+      focus,
       mode: projectMode,
       personal_goal: personalGoal,
       personal_target: personalTarget,
@@ -675,6 +689,18 @@ export default function Home() {
                     </select>
                   </label>
                   <label>
+                    What fits you? (optional)
+                    <select
+                      value={focus}
+                      onChange={(e) => setFocus(e.target.value)}
+                    >
+                      <option value="general">Choose if useful</option>
+                      <option value="coach">Coach or instructor</option>
+                      <option value="creator">Creator or hobbyist</option>
+                      <option value="founder">Business founder</option>
+                    </select>
+                  </label>
+                  <label>
                     {projectMode === "personal"
                       ? "Your name or brand"
                       : "Product name"}
@@ -848,15 +874,56 @@ export default function Home() {
                   </p>
                 </section>
                 {view === "journey" && <GrowthJourneyGuide />}
+                {view === "settings" && (
+                  <PlanUsage orgId={orgId} isOwner={role === "owner"} />
+                )}
+                {view === "customers" && (
+                  <ConversionTools
+                    key={orgId + projectId + "conversions"}
+                    orgId={orgId}
+                    projectId={projectId}
+                    isOwner={role === "owner"}
+                  />
+                )}
+                {view === "customers" && (
+                  <PilotResults
+                    key={orgId + projectId}
+                    orgId={orgId}
+                    projectId={projectId}
+                    canWrite={canWrite}
+                    isOwner={role === "owner"}
+                  />
+                )}
                 {view === "content" && (
-                  <details className="panel">
+                  <WeeklyWorkspace
+                    key={orgId + projectId}
+                    orgId={orgId}
+                    projectId={projectId}
+                    canWrite={canWrite}
+                    isOwner={role === "owner"}
+                    refreshKey={pipelineRefresh}
+                    reviewVideo={(id) => {
+                      setReviewJourneyId(id);
+                      document
+                        .getElementById("video-review")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                  />
+                )}
+                {view === "content" && (
+                  <details
+                    className="panel"
+                    id="video-review"
+                    open={reviewJourneyId || videoReviewOpen ? true : undefined}
+                  >
                     <summary>Create a video from your interview</summary>
                     <GrowthJourney
-                      key={orgId + projectId}
+                      key={orgId + projectId + reviewJourneyId}
                       orgId={orgId}
                       projectId={projectId}
                       isOwner={role === "owner"}
                       personal={personal}
+                      initialJourneyId={reviewJourneyId}
                     />
                   </details>
                 )}
@@ -883,6 +950,16 @@ export default function Home() {
                 )}
                 {view === "profile" && (
                   <div className="journey-actions">
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => {
+                        setVideoReviewOpen(true);
+                        setView("content");
+                      }}
+                    >
+                      Record an interview (optional)
+                    </button>
                     <button
                       type="button"
                       className="secondary"
@@ -947,36 +1024,28 @@ export default function Home() {
                   />
                 )}
                 <div hidden={view !== "profile"}>
-                  {personal ? (
-                    <details
-                      className="panel"
-                      onToggle={(e) =>
-                        setPersonalInterviewOpen(e.currentTarget.open)
-                      }
-                    >
-                      <summary>Try an interview (optional demo)</summary>
-                      <FounderInterview
-                        key={"interview" + orgId + projectId}
-                        canWrite={canWrite}
-                        active={view === "profile" && personalInterviewOpen}
-                        personal
-                      />
-                    </details>
-                  ) : (
-                    <>
-                      <FounderInterview
-                        key={"interview" + orgId + projectId}
-                        canWrite={canWrite}
-                        active={view === "profile"}
-                      />
-                      <CompanyBrief
-                        key={"company" + orgId + projectId}
-                        orgId={orgId}
-                        projectId={projectId}
-                        canWrite={canWrite}
-                      />
-                    </>
+                  {!personal && (
+                    <CompanyBrief
+                      key={"company" + orgId + projectId}
+                      orgId={orgId}
+                      projectId={projectId}
+                      canWrite={canWrite}
+                    />
                   )}
+                </div>
+                <div hidden={view !== "settings"}>
+                  <details
+                    className="panel"
+                    onToggle={(e) => setDemoInterviewOpen(e.currentTarget.open)}
+                  >
+                    <summary>Legacy HeyGen demo (no uploads)</summary>
+                    <FounderInterview
+                      key={"interview" + orgId + projectId}
+                      canWrite={canWrite}
+                      active={view === "settings" && demoInterviewOpen}
+                      personal={personal}
+                    />
+                  </details>
                 </div>
                 <div hidden={view !== "content"}>
                   <CreationChoices onChoose={openStudio} compact />

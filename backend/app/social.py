@@ -33,6 +33,8 @@ def requested_scopes(provider):
     scopes = list(SCOPES[provider])
     if provider == "facebook" and os.getenv("JOURNEY_PUBLISHING_ENABLED") == "true":
         scopes.append("pages_manage_posts")
+    if provider == "instagram" and os.getenv("INSTAGRAM_PUBLISHING_ENABLED") == "true":
+        scopes.extend(["instagram_business_content_publish", "instagram_business_manage_insights"])
     return scopes
 
 

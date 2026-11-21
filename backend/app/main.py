@@ -19,9 +19,11 @@ from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from .billing import router as billing_router
 from .database import get_db
 from .generation import generate
 from .journey.api import router as journey_router
+from .media import router as media_router
 from .models import (
     AuditLog,
     Draft,
@@ -35,6 +37,7 @@ from .models import (
     ResearchSource,
     User,
 )
+from .pilot import router as pilot_router
 from .platforms import router as platforms_router
 from .security import (
     COOKIE,
@@ -63,6 +66,9 @@ if not logger.handlers:
 logger.propagate = False
 
 app = FastAPI(title="FounderOS API", version="0.3.0")
+app.include_router(pilot_router)
+app.include_router(media_router)
+app.include_router(billing_router)
 app.include_router(journey_router)
 app.include_router(workflow_router)
 app.include_router(social_router)
@@ -148,6 +154,7 @@ class Registration(Credentials):
 
 
 class ProjectInput(BaseModel):
+    focus: Literal["general", "coach", "creator", "founder"] = "general"
     mode: Literal["business", "personal"] = "business"
     personal_goal: Literal["followers", "newsletter_subscribers", "inquiries"] = "followers"
     personal_target: int = Field(default=1000, ge=1, le=10000000)
@@ -410,6 +417,10 @@ def get_project(project_id: str, context: Tenant = Depends(tenant), db: Session 
 @app.post("/projects/{project_id}/strategy")
 def strategy(project_id: str, context: Tenant = Depends(editor), db: Session = Depends(get_db)):
     p = require_project(db, project_id, context)
+    from .billing import reserve
+
+    reserve(db, context.organization.id, "research_runs", 1, "quick-" + str(uuid4()))
+    db.commit()  # Keep the reservation if an external generation response is uncertain.
     sources = sources_for(db, p.id)
     plan, mode = generate(p.data, sources)
     result = {
@@ -433,6 +444,10 @@ def create_drafts(
     project_id: str, context: Tenant = Depends(editor), db: Session = Depends(get_db)
 ):
     p = require_project(db, project_id, context)
+    from .billing import reserve
+
+    reserve(db, context.organization.id, "research_runs", 1, "quick-" + str(uuid4()))
+    db.commit()
     plan, mode = generate(p.data, sources_for(db, p.id))
     items = [
         Draft(

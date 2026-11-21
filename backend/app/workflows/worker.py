@@ -4,6 +4,7 @@ import argparse
 import logging
 import time
 from datetime import date, timedelta
+from pathlib import Path
 from uuid import uuid4
 
 from sqlalchemy import select, update
@@ -26,6 +27,14 @@ logger = logging.getLogger("founderos.worker")
 
 
 def authorized(db, run):
+    from fastapi import HTTPException
+
+    from ..billing import active
+
+    try:
+        active(db, run.organization_id)
+    except HTTPException:
+        return False
     return (
         db.scalar(
             select(Membership.id).where(
@@ -267,16 +276,20 @@ def main():
     )
     args = parser.parse_args()
     from ..journey.worker import process_one as process_journey
+    from ..media import process_one as process_media
     from .schedules import schedule_one
 
     if args.once:
         process_one()
         process_journey()
+        process_media()
         return
 
     while True:
+        Path("/tmp/rymu-worker-heartbeat").touch()
         schedule_one()
         worked = process_journey()
+        worked = process_media() or worked
         if not process_one() and not worked:
             time.sleep(2)
 

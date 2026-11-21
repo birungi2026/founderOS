@@ -212,10 +212,27 @@ def performance_snapshot(db, project_id):
     return {
         "totals": totals,
         "channels": channels,
+        "approved_writing_examples": [
+            {
+                "text": draft.content[:1000],
+                "revision": draft.revision_number,
+                "note": "User-approved wording; a style example, not evidence of growth or factual claims.",
+            }
+            for draft in db.scalars(
+                select(Draft)
+                .where(
+                    Draft.project_id == project_id,
+                    Draft.status.in_(["approved", "sent"]),
+                    Draft.revision_number > 1,
+                )
+                .order_by(Draft.id)
+                .limit(5)
+            )
+        ],
         "published_content": [
             {
                 "journey_id": row.id,
-                "channel": "facebook",
+                "channel": row.data.get("publication", {}).get("provider", "facebook"),
                 "caption": row.data.get("publication", {}).get("caption", "")[:400],
                 "observed_at": row.data.get("observed_at"),
                 "engagement": row.data.get("results", {}).get("metrics", {}),
@@ -333,6 +350,7 @@ def queue_workflow(
                 else project.data.get(key)
             )
             for key in [
+                "focus",
                 "product_name",
                 "description",
                 "audience",
@@ -365,6 +383,15 @@ def queue_workflow(
         "social_accounts": social_context(db, project_id),
         "generation_mode": mode,
     }
+    from ..billing import reserve
+
+    reserve(
+        db,
+        context.organization.id,
+        "research_runs",
+        1,
+        "workflow-" + context.organization.id + "-" + idempotency_key,
+    )
     reserve_quota(db, context.organization.id)
     run = WorkflowRun(
         organization_id=context.organization.id,

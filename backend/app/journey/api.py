@@ -14,6 +14,7 @@ from pydantic import Field
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
+from ..billing import active, render_seconds, reserve
 from ..database import get_db
 from ..models import GrowthJourney, Project, SocialAccount
 from ..security import Tenant, audit, owner, tenant
@@ -35,6 +36,15 @@ def workspace_enabled(organization_id):
     allowed = {
         value.strip()
         for value in os.getenv("JOURNEY_ENABLED_ORGANIZATIONS", "").split(",")
+        if value.strip()
+    }
+    return organization_id in allowed or "*" in allowed
+
+
+def training_enabled(organization_id):
+    allowed = {
+        value.strip()
+        for value in os.getenv("TAVUS_TRAINING_ORGANIZATIONS", "").split(",")
         if value.strip()
     }
     return organization_id in allowed or "*" in allowed
@@ -95,6 +105,10 @@ def change(db, row, revision, statuses):
 
 def public(row):
     fields = {k: v for k, v in row.data.items() if k not in {"media_path", "media_mime"}}
+    if row.data.get("asset_id") and row.status == "video_ready":
+        from ..media import video_url
+
+        fields["video_url"] = video_url(row.data["asset_id"])
     return {
         "id": row.id,
         "status": row.status,
@@ -120,7 +134,8 @@ def capabilities():
             os.getenv("PUBLIC_API_URL", "").startswith("https://")
             and len(os.getenv("JOURNEY_MEDIA_SIGNING_KEY", "")) >= 32
         ),
-        "publishing": os.getenv("JOURNEY_PUBLISHING_ENABLED") == "true",
+        "publishing": os.getenv("JOURNEY_PUBLISHING_ENABLED") == "true"
+        or os.getenv("INSTAGRAM_PUBLISHING_ENABLED") == "true",
     }
 
 
@@ -137,6 +152,7 @@ def journeys(project_id: str, context: Tenant = Depends(tenant), db: Session = D
         "capabilities": {
             **capabilities(),
             "workspace_enabled": workspace_enabled(context.organization.id),
+            "training": capabilities()["training"] and training_enabled(context.organization.id),
         },
         "has_approved_brand": bool(
             (brand := latest_brand(db, project_id)) and brand.status == "approved"
@@ -362,6 +378,11 @@ def edit_content(
     row = lookup(db, project_id, journey_id, context)
     change(db, row, data.revision, ["content_review", "video_ready"])
     changed_script = data.script != row.data.get("script")
+    if row.data.get("asset_id") and changed_script:
+        raise HTTPException(
+            409,
+            "Real footage has no generated script. Make a new clip to change its spoken content.",
+        )
     row.data = {**row.data, "script": data.script, "caption": data.caption}
     if changed_script:
         row.data = {k: v for k, v in row.data.items() if k not in {"video_id", "video_url"}}
@@ -385,6 +406,9 @@ def train(
     require_enabled(context)
     row = lookup(db, project_id, journey_id, context)
     change(db, row, data.revision, ["content_review"])
+    active(db, context.organization.id)
+    if not training_enabled(context.organization.id):
+        raise HTTPException(403, "Custom-avatar setup has not been provisioned for this workspace")
     if data.consent is not True or not capabilities()["video"]:
         raise HTTPException(422, "Tavus configuration and your likeness/voice consent are required")
     if not Path(row.data.get("media_path", "")).is_file():
@@ -450,8 +474,13 @@ def render(
         raise HTTPException(
             422, "Save a script of 20–1200 characters and a caption of 10–2000 characters first"
         )
+    seconds = render_seconds(row.data["script"])
+    reserve(
+        db, context.organization.id, "video_seconds", seconds, f"render-{row.id}-{attempts + 1}"
+    )
     row.data = {
         **row.data,
+        "reserved_seconds": seconds,
         "render_attempts": attempts + 1,
         "render_period": period,
         "period_render_attempts": (
@@ -470,13 +499,21 @@ def account_for(db, project_id, account_id):
         select(SocialAccount).where(
             SocialAccount.id == account_id,
             SocialAccount.project_id == project_id,
-            SocialAccount.provider == "facebook",
+            SocialAccount.provider.in_(["facebook", "instagram"]),
             SocialAccount.status == "connected",
             SocialAccount.expires_at > time.time(),
         )
     )
-    if not row or not {"pages_manage_posts", "pages_read_engagement"}.issubset(row.permissions):
-        raise HTTPException(409, "Connect a Facebook Page with publishing permission first")
+    required = (
+        {"pages_manage_posts", "pages_read_engagement"}
+        if row and row.provider == "facebook"
+        else {"instagram_business_basic", "instagram_business_content_publish"}
+    )
+    if not row or not required.issubset(row.permissions):
+        raise HTTPException(
+            409,
+            "Connect a Facebook Page or Instagram professional account with publishing permission",
+        )
     return row
 
 
@@ -496,9 +533,15 @@ def schedule(
 ):
     require_enabled(context)
     row = lookup(db, project_id, journey_id, context)
+    active(db, context.organization.id)
     change(db, row, data.revision, ["video_ready"])
     account = account_for(db, project_id, data.account_id)
-    if not capabilities()["publishing"] or not data.approve or data.publish_at.tzinfo is None:
+    flag = (
+        "JOURNEY_PUBLISHING_ENABLED"
+        if account.provider == "facebook"
+        else "INSTAGRAM_PUBLISHING_ENABLED"
+    )
+    if os.getenv(flag) != "true" or not data.approve or data.publish_at.tzinfo is None:
         raise HTTPException(
             422,
             "Enable publishing, approve the exact video/caption and choose a time with a timezone",
@@ -516,6 +559,8 @@ def schedule(
         "video_url": row.data["video_url"],
         "caption": row.data["caption"],
         "account_id": account.id,
+        "provider": account.provider,
+        "asset_id": row.data.get("asset_id"),
         "publish_at": when,
     }
     row.data = {

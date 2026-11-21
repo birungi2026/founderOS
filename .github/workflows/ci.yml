@@ -21,6 +21,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
       - run: pip install -r requirements-lock.txt ruff==0.17.5
         working-directory: backend
       - run: ruff check app tests migrations && ruff format --check app tests migrations
@@ -48,10 +49,14 @@ jobs:
           python-version: '3.12'
       - run: pip install -r backend/requirements-lock.txt playwright
       - run: python -m playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
       - name: Start backend and frontend
         run: |
           cd backend
           alembic upgrade head
+          export JOURNEY_MEDIA_SIGNING_KEY=fixture-media-signing-key-at-least-32-chars
+          export JOURNEY_ENABLED_ORGANIZATIONS='*'
+          export PUBLIC_API_URL=https://api.rymu.test
           BRAVE_SEARCH_API_KEY=fixture-search-key GENERATION_MODE=template uvicorn app.main:app --port 8000 --no-access-log > /tmp/founderos-api.log 2>&1 &
           FOUNDEROS_TEST_RESEARCH=1 BRAVE_SEARCH_API_KEY=fixture-search-key PYTHONPATH=. python ../frontend/tests/fixture_worker.py > /tmp/founderos-worker.log 2>&1 &
           cd ../frontend

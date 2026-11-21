@@ -5,6 +5,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from journey_flow import journey_flow
+from pilot_flow import pilot_flow
 from playwright.sync_api import expect, sync_playwright
 
 
@@ -148,8 +149,9 @@ def main():
         page.get_by_label("Saved project").select_option(label="Browser Growth Test")
         section("Advanced tools")
         expect(page.get_by_text("25%", exact=True)).to_be_visible()
-        # Connected five-agent workflow shares one approved founder profile.
-        section("1. Company & founder")
+        # Legacy demo stays optional in Settings; the real interview lives in Content studio.
+        section("Advanced tools")
+        page.get_by_text("Legacy HeyGen demo (no uploads)", exact=True).click()
         interview = page.get_by_role(
             "region", name="Founder video interview", exact=True
         )
@@ -178,7 +180,7 @@ def main():
         page.wait_for_function(
             "() => window.interviewTestTracks.every(track => track.readyState === 'ended')"
         )
-        section("1. Company & founder")
+        section("Advanced tools")
         expect(
             interview.get_by_label("Recorded founder interview", exact=True)
         ).to_be_visible()
@@ -222,6 +224,7 @@ def main():
         expect(
             interview.get_by_role("button", name="Continue to review brief", exact=True)
         ).to_be_disabled()
+        section("1. Company & founder")
         expect(page.locator(".answer-guide")).to_have_count(4)
         audience_guide = page.locator(".answer-guide").nth(3)
         audience_guide.locator("summary").click()
@@ -611,6 +614,7 @@ def main():
             page.get_by_role("button", name="Save new revision", exact=True)
         ).to_have_count(1)
         page.screenshot(path="/tmp/founderos-personal-brand.png", full_page=True)
+        pilot_flow(page, section, require_drafts=True)
         assert not errors, errors
         browser.close()
         print(
